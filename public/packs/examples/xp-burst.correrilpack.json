@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "manifest": {
+    "id": "xp-burst",
+    "name": "XP Burst",
+    "version": "0.1.0",
+    "priority": 160,
+    "dependsOn": []
+  },
+  "defs": [],
+  "scripts": [
+    {
+      "name": "main.js",
+      "code": "export default function register(api) {\n  api.log('loaded');\n  api.on('enemyDeath', (ev) => {\n    const extras = 2;\n    for (let i = 0; i < extras; i++) {\n      const angle = Math.PI * 2 * api.rng.next();\n      const dist = 10 + api.rng.range(4, 16);\n      api.world.spawnPickup(\n        ev.x + Math.cos(angle) * dist,\n        ev.y + Math.sin(angle) * dist,\n        'xp_small'\n      );\n    }\n  });\n}\n"
+    }
+  ]
+}

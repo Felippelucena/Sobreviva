@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "defs": [
+    {
+      "kind": "wave",
+      "id": "default",
+      "entries": [
+        { "enemyId": "runner", "startSec": 0, "endSec": 9999, "ratePerSec": 1.5, "cap": 160 },
+        { "enemyId": "swarmer", "startSec": 30, "endSec": 9999, "ratePerSec": 1.0, "cap": 120 },
+        { "enemyId": "bruiser", "startSec": 90, "endSec": 9999, "ratePerSec": 0.25, "cap": 24 }
+      ]
+    }
+  ]
+}

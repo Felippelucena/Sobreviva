@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "base",
+  "name": "Correril Base",
+  "version": "0.1.0",
+  "priority": 0,
+  "files": [
+    "weapons.json",
+    "enemies.json",
+    "pickups.json",
+    "waves.json",
+    "characters.json",
+    "maps.json"
+  ]
+}

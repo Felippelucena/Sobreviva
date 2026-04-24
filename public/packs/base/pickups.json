@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "defs": [
+    {
+      "kind": "pickup",
+      "id": "xp_small",
+      "effect": "xp",
+      "value": 1,
+      "magnetizable": true,
+      "sprite": { "color": 3266048, "radius": 4 }
+    },
+    {
+      "kind": "pickup",
+      "id": "xp_medium",
+      "effect": "xp",
+      "value": 5,
+      "magnetizable": true,
+      "sprite": { "color": 1149906, "radius": 5 }
+    },
+    {
+      "kind": "pickup",
+      "id": "heal_small",
+      "effect": "heal",
+      "value": 15,
+      "magnetizable": false,
+      "sprite": { "color": 16763750, "radius": 6 }
+    }
+  ]
+}

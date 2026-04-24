@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "manifest": {
+    "id": "rapid-fire",
+    "name": "Rapid Fire",
+    "version": "0.1.0",
+    "priority": 150,
+    "dependsOn": []
+  },
+  "defs": [
+    {
+      "kind": "weapon",
+      "id": "spark",
+      "name": "Spark (Rapid)",
+      "damage": 14,
+      "cooldownMs": 220,
+      "projectile": {
+        "speed": 420,
+        "radius": 4,
+        "lifetimeMs": 800,
+        "pierce": 0,
+        "color": 10079487
+      }
+    }
+  ],
+  "scripts": []
+}

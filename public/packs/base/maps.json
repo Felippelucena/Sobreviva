@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "defs": [
+    {
+      "kind": "map",
+      "id": "plains",
+      "name": "Plains",
+      "waveId": "default",
+      "backgroundColor": 921880,
+      "spawnRingMin": 380,
+      "spawnRingMax": 560
+    }
+  ]
+}

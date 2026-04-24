@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "defs": [
+    {
+      "kind": "weapon",
+      "id": "spark",
+      "name": "Spark",
+      "damage": 18,
+      "cooldownMs": 600,
+      "projectile": {
+        "speed": 360,
+        "radius": 5,
+        "lifetimeMs": 900,
+        "pierce": 0,
+        "color": 16766822
+      }
+    },
+    {
+      "kind": "weapon",
+      "id": "hammer",
+      "name": "Hammer",
+      "damage": 42,
+      "cooldownMs": 1100,
+      "projectile": {
+        "speed": 240,
+        "radius": 10,
+        "lifetimeMs": 650,
+        "pierce": 1,
+        "color": 15967243
+      }
+    },
+    {
+      "kind": "weapon",
+      "id": "needle",
+      "name": "Needle",
+      "damage": 8,
+      "cooldownMs": 220,
+      "projectile": {
+        "speed": 500,
+        "radius": 3,
+        "lifetimeMs": 700,
+        "pierce": 0,
+        "color": 10079487
+      }
+    }
+  ]
+}

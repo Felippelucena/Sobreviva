@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "defs": [
+    {
+      "kind": "character",
+      "id": "runner_hero",
+      "name": "Runner",
+      "startWeaponId": "spark",
+      "baseHp": 100,
+      "baseSpeed": 180,
+      "pickupRadius": 90,
+      "sprite": { "color": 5032944, "radius": 12 }
+    },
+    {
+      "kind": "character",
+      "id": "bruiser_hero",
+      "name": "Bruiser",
+      "startWeaponId": "hammer",
+      "baseHp": 160,
+      "baseSpeed": 140,
+      "pickupRadius": 80,
+      "sprite": { "color": 15967243, "radius": 14 }
+    },
+    {
+      "kind": "character",
+      "id": "swarmer_hero",
+      "name": "Swarmer",
+      "startWeaponId": "needle",
+      "baseHp": 70,
+      "baseSpeed": 220,
+      "pickupRadius": 110,
+      "sprite": { "color": 10079487, "radius": 11 }
+    }
+  ]
+}

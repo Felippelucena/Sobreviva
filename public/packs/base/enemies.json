@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "defs": [
+    {
+      "kind": "enemy",
+      "id": "runner",
+      "name": "Runner",
+      "hp": 28,
+      "speed": 72,
+      "contactDamage": 10,
+      "xpDrop": 2,
+      "hitbox": { "radius": 10 },
+      "sprite": { "color": 15681391, "radius": 10 }
+    },
+    {
+      "kind": "enemy",
+      "id": "swarmer",
+      "name": "Swarmer",
+      "hp": 14,
+      "speed": 96,
+      "contactDamage": 6,
+      "xpDrop": 1,
+      "hitbox": { "radius": 7 },
+      "sprite": { "color": 16224814, "radius": 7 }
+    },
+    {
+      "kind": "enemy",
+      "id": "bruiser",
+      "name": "Bruiser",
+      "hp": 72,
+      "speed": 48,
+      "contactDamage": 16,
+      "xpDrop": 5,
+      "hitbox": { "radius": 14 },
+      "sprite": { "color": 11542690, "radius": 14 }
+    }
+  ]
+}
