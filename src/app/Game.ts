@@ -27,7 +27,6 @@ import { Hud } from "../ui/Hud";
 import { UpgradeModal } from "../ui/UpgradeModal";
 import type { JsRuntime } from "../mods/JsRuntime";
 
-const DEFAULT_MAP_ID = "plains";
 const SHAKE_DECAY = 0.88;
 
 export interface GameResult {
@@ -41,6 +40,8 @@ export interface GameOptions {
   host: HTMLElement;
   registry: ContentRegistry;
   characterId: string;
+  mapId: string;
+  waveId: string;
   onRunEnded: (result: GameResult) => void;
   jsRuntime?: JsRuntime | null;
 }
@@ -63,6 +64,8 @@ export class Game {
   private readonly registry: ContentRegistry;
   private readonly host: HTMLElement;
   private readonly characterId: string;
+  private readonly mapId: string;
+  private readonly waveId: string;
   private readonly onRunEnded: (result: GameResult) => void;
   private readonly jsRuntime: JsRuntime | null;
   private jsDetach: (() => void) | null = null;
@@ -73,6 +76,8 @@ export class Game {
     this.host = opts.host;
     this.registry = opts.registry;
     this.characterId = opts.characterId;
+    this.mapId = opts.mapId;
+    this.waveId = opts.waveId;
     this.onRunEnded = opts.onRunEnded;
     this.jsRuntime = opts.jsRuntime ?? null;
     this.host.innerHTML = "";
@@ -89,8 +94,8 @@ export class Game {
 
     const character = this.registry.get("character", this.characterId);
     const weapon = this.registry.get("weapon", character.startWeaponId);
-    const map = this.registry.get("map", DEFAULT_MAP_ID);
-    const wave = this.registry.get("wave", map.waveId);
+    const map = this.registry.get("map", this.mapId);
+    const wave = this.registry.get("wave", this.waveId);
 
     this.state.playerId = spawnPlayerFromCharacter(
       this.world,

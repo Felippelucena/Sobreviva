@@ -1,3 +1,4 @@
+import type { MapDef } from "../content/schema/map";
 import { META_KEY } from "./Keys";
 import { SaveStore } from "./SaveStore";
 
@@ -55,6 +56,36 @@ export class MetaManager {
 
   isUnlocked(characterId: string): boolean {
     return this.current.unlockedCharacters.includes(characterId);
+  }
+
+  isMapUnlocked(map: MapDef): boolean {
+    const u = map.unlock;
+    if (!u) return true;
+    switch (u.kind) {
+      case "always":
+        return true;
+      case "kills":
+        return this.current.bestRun.kills >= u.count;
+      case "runs":
+        return this.current.runs >= u.count;
+      case "time":
+        return this.current.bestRun.timeMs >= u.ms;
+    }
+  }
+
+  mapLockHint(map: MapDef): string | null {
+    const u = map.unlock;
+    if (!u) return null;
+    switch (u.kind) {
+      case "always":
+        return null;
+      case "kills":
+        return `Acumule ${u.count} kills em uma run`;
+      case "runs":
+        return `Complete ${u.count} runs`;
+      case "time":
+        return `Sobreviva ${Math.floor(u.ms / 1000)}s em uma run`;
+    }
   }
 
   recordRun(result: RunResult): { newlyUnlocked: UnlockRule[] } {

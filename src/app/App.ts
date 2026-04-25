@@ -29,6 +29,8 @@ export class App {
   private currentGame: Game | null = null;
   private screen: Screen = "menu";
   private lastCharacterId = "runner_hero";
+  private lastMapId: string | null = null;
+  private lastWaveId: string | null = null;
   private readonly onKeyDown: (e: KeyboardEvent) => void;
 
   constructor(
@@ -95,11 +97,15 @@ export class App {
       this.registry,
       this.meta,
       {
-        onStart: (id) => this.startRun(id),
+        onStart: (characterId, mapId, waveId) => this.startRun(characterId, mapId, waveId),
         onOpenEditor: () => this.callbacks.onNavigateEditor(),
         onOpenMods: () => this.openModsMenu(),
       },
-      this.lastCharacterId,
+      {
+        characterId: this.lastCharacterId,
+        mapId: this.lastMapId,
+        waveId: this.lastWaveId,
+      },
     );
     this.mainMenu.show();
   }
@@ -123,9 +129,11 @@ export class App {
     if (this.screen === "menu") this.showMenu();
   }
 
-  private async startRun(characterId: string): Promise<void> {
+  private async startRun(characterId: string, mapId: string, waveId: string): Promise<void> {
     if (!this.registry) return;
     this.lastCharacterId = characterId;
+    this.lastMapId = mapId;
+    this.lastWaveId = waveId;
     this.mainMenu?.close();
     this.runSummary.close();
     this.pauseMenu.close();
@@ -135,6 +143,8 @@ export class App {
       host: this.host,
       registry: this.registry,
       characterId,
+      mapId,
+      waveId,
       onRunEnded: (result) => this.handleRunEnded(result),
       jsRuntime: this.jsRuntime.hasMods() ? this.jsRuntime : null,
     });
@@ -171,7 +181,13 @@ export class App {
   private showSummary(result: RunResult, unlocks: readonly UnlockRule[]): void {
     this.screen = "summary";
     this.runSummary.show(result, unlocks, {
-      onPlayAgain: () => this.startRun(result.characterId),
+      onPlayAgain: () => {
+        if (this.lastMapId && this.lastWaveId) {
+          void this.startRun(result.characterId, this.lastMapId, this.lastWaveId);
+        } else {
+          this.showMenu();
+        }
+      },
       onBackToMenu: () => this.showMenu(),
     });
   }
