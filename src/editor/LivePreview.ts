@@ -32,12 +32,12 @@ const FALLBACK_WEAPON: WeaponDef = {
   cooldownMs: 500,
   volleys: [
     {
-      startMs: 0,
-      projectileCount: 1,
-      projectileIntervalMs: 0,
       shots: [
         {
           type: "projectile",
+          startMs: 0,
+          projectileCount: 1,
+          projectileIntervalMs: 0,
           angleOffsetDeg: 0,
           damage: 10,
           projectile: { speed: 320, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },

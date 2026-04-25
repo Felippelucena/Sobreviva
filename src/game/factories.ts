@@ -75,9 +75,6 @@ export function weaponStateFromDef(weapon: WeaponDef): WeaponState {
     cooldownMs: weapon.cooldownMs,
     // Deep clone so runtime upgrades can mutate without touching the frozen def.
     volleys: weapon.volleys.map((v) => ({
-      startMs: v.startMs,
-      projectileCount: v.projectileCount,
-      projectileIntervalMs: v.projectileIntervalMs,
       shots: v.shots.map((s) => structuredClone(s) as WeaponShot),
     })),
     clockMs: 0,

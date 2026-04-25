@@ -8,12 +8,12 @@
       "cooldownMs": 600,
       "volleys": [
         {
-          "startMs": 0,
-          "projectileCount": 1,
-          "projectileIntervalMs": 0,
           "shots": [
             {
               "type": "projectile",
+              "startMs": 0,
+              "projectileCount": 1,
+              "projectileIntervalMs": 0,
               "angleOffsetDeg": 0,
               "damage": 18,
               "projectile": { "speed": 360, "radius": 5, "lifetimeMs": 900, "pierce": 0, "color": 16766822 }
@@ -29,12 +29,12 @@
       "cooldownMs": 1100,
       "volleys": [
         {
-          "startMs": 0,
-          "projectileCount": 1,
-          "projectileIntervalMs": 0,
           "shots": [
             {
               "type": "projectile",
+              "startMs": 0,
+              "projectileCount": 1,
+              "projectileIntervalMs": 0,
               "angleOffsetDeg": 0,
               "damage": 42,
               "projectile": { "speed": 240, "radius": 10, "lifetimeMs": 650, "pierce": 1, "color": 15967243 }
@@ -50,12 +50,12 @@
       "cooldownMs": 220,
       "volleys": [
         {
-          "startMs": 0,
-          "projectileCount": 1,
-          "projectileIntervalMs": 0,
           "shots": [
             {
               "type": "projectile",
+              "startMs": 0,
+              "projectileCount": 1,
+              "projectileIntervalMs": 0,
               "angleOffsetDeg": 0,
               "damage": 8,
               "projectile": { "speed": 500, "radius": 3, "lifetimeMs": 700, "pierce": 0, "color": 10079487 }
@@ -71,24 +71,30 @@
       "cooldownMs": 950,
       "volleys": [
         {
-          "startMs": 0,
-          "projectileCount": 1,
-          "projectileIntervalMs": 0,
           "shots": [
             {
               "type": "projectile",
+              "startMs": 0,
+              "projectileCount": 1,
+              "projectileIntervalMs": 0,
               "angleOffsetDeg": -15,
               "damage": 7,
               "projectile": { "speed": 420, "radius": 4, "lifetimeMs": 480, "pierce": 0, "color": 16751052 }
             },
             {
               "type": "projectile",
+              "startMs": 0,
+              "projectileCount": 1,
+              "projectileIntervalMs": 0,
               "angleOffsetDeg": 0,
               "damage": 7,
               "projectile": { "speed": 420, "radius": 4, "lifetimeMs": 480, "pierce": 0, "color": 16751052 }
             },
             {
               "type": "projectile",
+              "startMs": 0,
+              "projectileCount": 1,
+              "projectileIntervalMs": 0,
               "angleOffsetDeg": 15,
               "damage": 7,
               "projectile": { "speed": 420, "radius": 4, "lifetimeMs": 480, "pierce": 0, "color": 16751052 }
@@ -104,12 +110,12 @@
       "cooldownMs": 950,
       "volleys": [
         {
-          "startMs": 0,
-          "projectileCount": 6,
-          "projectileIntervalMs": 50,
           "shots": [
             {
               "type": "projectile",
+              "startMs": 0,
+              "projectileCount": 6,
+              "projectileIntervalMs": 50,
               "angleOffsetDeg": 0,
               "damage": 4,
               "projectile": { "speed": 520, "radius": 3, "lifetimeMs": 600, "pierce": 0, "color": 7405567 }
@@ -125,12 +131,12 @@
       "cooldownMs": 1400,
       "volleys": [
         {
-          "startMs": 0,
-          "projectileCount": 1,
-          "projectileIntervalMs": 0,
           "shots": [
             {
               "type": "area",
+              "startMs": 0,
+              "projectileCount": 1,
+              "projectileIntervalMs": 0,
               "damage": 22,
               "radius": 90,
               "color": 16751052,

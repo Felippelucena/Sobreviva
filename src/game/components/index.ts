@@ -43,15 +43,12 @@ export interface EnemySource {
 
 export interface PendingShot {
   atMs: number;
-  shots: readonly WeaponShot[];
+  shot: WeaponShot;
   aimX: number;
   aimY: number;
 }
 
 export interface WeaponVolleyState {
-  startMs: number;
-  projectileCount: number;
-  projectileIntervalMs: number;
   shots: WeaponShot[];
 }
 

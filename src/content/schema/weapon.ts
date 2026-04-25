@@ -9,8 +9,15 @@ export const WeaponProjectile = z.object({
   color: HexColor.default(0xffd166),
 });
 
+const ShotTiming = {
+  startMs: NonNegativeNumber.default(0),
+  projectileCount: z.number().int().positive().default(1),
+  projectileIntervalMs: NonNegativeNumber.default(0),
+};
+
 export const ProjectileShot = z.object({
   type: z.literal("projectile"),
+  ...ShotTiming,
   angleOffsetDeg: z.number().default(0),
   damage: PositiveNumber,
   projectile: WeaponProjectile,
@@ -18,6 +25,7 @@ export const ProjectileShot = z.object({
 
 export const AreaShot = z.object({
   type: z.literal("area"),
+  ...ShotTiming,
   damage: PositiveNumber,
   radius: PositiveNumber,
   originOffsetX: z.number().default(0),
@@ -29,9 +37,6 @@ export const AreaShot = z.object({
 export const WeaponShot = z.discriminatedUnion("type", [ProjectileShot, AreaShot]);
 
 export const WeaponVolley = z.object({
-  startMs: NonNegativeNumber.default(0),
-  projectileCount: z.number().int().positive().default(1),
-  projectileIntervalMs: NonNegativeNumber.default(0),
   shots: z.array(WeaponShot).min(1),
 });
 

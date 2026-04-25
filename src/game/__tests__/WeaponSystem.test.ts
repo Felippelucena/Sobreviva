@@ -54,33 +54,25 @@ function countAoe(world: World): number {
   return n;
 }
 
-function straightWeapon(opts: { id?: string; cooldownMs?: number; damage?: number; projectile?: Partial<{ speed: number; radius: number; lifetimeMs: number; pierce: number; color: number }> } = {}): WeaponDef {
+function projShot(opts: Partial<{ startMs: number; projectileCount: number; projectileIntervalMs: number; angleOffsetDeg: number; damage: number; speed: number }> = {}) {
+  return {
+    type: "projectile" as const,
+    startMs: opts.startMs ?? 0,
+    projectileCount: opts.projectileCount ?? 1,
+    projectileIntervalMs: opts.projectileIntervalMs ?? 0,
+    angleOffsetDeg: opts.angleOffsetDeg ?? 0,
+    damage: opts.damage ?? 10,
+    projectile: { speed: opts.speed ?? 360, radius: 4, lifetimeMs: 800 },
+  };
+}
+
+function straightWeapon(opts: { id?: string; cooldownMs?: number } = {}): WeaponDef {
   return WeaponDef.parse({
     kind: "weapon",
     id: opts.id ?? "test",
     name: "Test",
     cooldownMs: opts.cooldownMs ?? 600,
-    volleys: [
-      {
-        startMs: 0,
-        projectileCount: 1,
-        projectileIntervalMs: 0,
-        shots: [
-          {
-            type: "projectile",
-            angleOffsetDeg: 0,
-            damage: opts.damage ?? 10,
-            projectile: {
-              speed: opts.projectile?.speed ?? 360,
-              radius: opts.projectile?.radius ?? 4,
-              lifetimeMs: opts.projectile?.lifetimeMs ?? 800,
-              ...(opts.projectile?.pierce !== undefined ? { pierce: opts.projectile.pierce } : {}),
-              ...(opts.projectile?.color !== undefined ? { color: opts.projectile.color } : {}),
-            },
-          },
-        ],
-      },
-    ],
+    volleys: [{ shots: [projShot()] }],
   });
 }
 
@@ -120,27 +112,13 @@ describe("WeaponSystem", () => {
     expect(countProjectiles(world)).toBeGreaterThanOrEqual(8);
   });
 
-  it("projectileCount=6 with interval=50ms enqueues 6 shots and fires within 250ms", () => {
+  it("shot.projectileCount=6 with interval=50ms enqueues 6 shots and fires within 250ms", () => {
     const weapon = WeaponDef.parse({
       kind: "weapon",
       id: "smg",
       name: "SMG",
       cooldownMs: 1000,
-      volleys: [
-        {
-          startMs: 0,
-          projectileCount: 6,
-          projectileIntervalMs: 50,
-          shots: [
-            {
-              type: "projectile",
-              angleOffsetDeg: 0,
-              damage: 4,
-              projectile: { speed: 500, radius: 3, lifetimeMs: 600 },
-            },
-          ],
-        },
-      ],
+      volleys: [{ shots: [projShot({ projectileCount: 6, projectileIntervalMs: 50, damage: 4, speed: 500 })] }],
     });
     const playerId = buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
@@ -163,15 +141,7 @@ describe("WeaponSystem", () => {
       cooldownMs: 1000,
       volleys: [
         {
-          startMs: 0,
-          projectileCount: 1,
-          projectileIntervalMs: 0,
-          shots: [-15, 0, 15].map((a) => ({
-            type: "projectile" as const,
-            angleOffsetDeg: a,
-            damage: 8,
-            projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
-          })),
+          shots: [-15, 0, 15].map((a) => projShot({ angleOffsetDeg: a, damage: 8, speed: 400 })),
         },
       ],
     });
@@ -191,34 +161,32 @@ describe("WeaponSystem", () => {
     expect(angles[2]).toBeCloseTo(15, 1);
   });
 
-  it("staggered volleys fire according to startMs", () => {
-    const projShot = {
-      type: "projectile" as const,
-      angleOffsetDeg: 0,
-      damage: 5,
-      projectile: { speed: 300, radius: 3, lifetimeMs: 400 },
-    };
+  it("staggered shots fire according to shot.startMs", () => {
     const weapon = WeaponDef.parse({
       kind: "weapon",
       id: "stagger",
       name: "Stagger",
       cooldownMs: 1500,
       volleys: [
-        { startMs: 0, projectileCount: 1, projectileIntervalMs: 0, shots: [projShot] },
-        { startMs: 0, projectileCount: 1, projectileIntervalMs: 0, shots: [projShot] },
-        { startMs: 200, projectileCount: 1, projectileIntervalMs: 0, shots: [projShot] },
+        {
+          shots: [
+            projShot({ startMs: 0 }),
+            projShot({ startMs: 0 }),
+            projShot({ startMs: 200 }),
+          ],
+        },
       ],
     });
     const playerId = buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
 
     weaponSystem(world, renderer, bus, TICK_DT);
-    // First tick: clockMs=16.67. Both startMs=0 volleys should fire (atMs=16.67 ≤ 16.67).
+    // First tick at clockMs ≈ 16.67. Both startMs=0 shots should fire (atMs=16.67 ≤ 16.67).
     expect(countProjectiles(world)).toBe(2);
     const ws = world.get(playerId, WeaponState)!;
     expect(ws.pendingShots.length).toBe(1);
 
-    // Advance until ~220ms; the startMs=200 volley should now have fired.
+    // Advance ~220ms; the startMs=200 shot should fire.
     for (let i = 0; i < 13; i++) weaponSystem(world, renderer, bus, TICK_DT);
     expect(countProjectiles(world)).toBe(3);
   });
@@ -231,10 +199,16 @@ describe("WeaponSystem", () => {
       cooldownMs: 1500,
       volleys: [
         {
-          startMs: 0,
-          projectileCount: 1,
-          projectileIntervalMs: 0,
-          shots: [{ type: "area", damage: 22, radius: 80 }],
+          shots: [
+            {
+              type: "area",
+              startMs: 0,
+              projectileCount: 1,
+              projectileIntervalMs: 0,
+              damage: 22,
+              radius: 80,
+            },
+          ],
         },
       ],
     });
@@ -246,7 +220,7 @@ describe("WeaponSystem", () => {
     expect(countAoe(world)).toBe(1);
   });
 
-  it("emits weaponFire event per shot", () => {
+  it("emits weaponFire event per shot fired", () => {
     const weapon = WeaponDef.parse({
       kind: "weapon",
       id: "shotgun",
@@ -254,15 +228,7 @@ describe("WeaponSystem", () => {
       cooldownMs: 1000,
       volleys: [
         {
-          startMs: 0,
-          projectileCount: 1,
-          projectileIntervalMs: 0,
-          shots: [-15, 0, 15].map((a) => ({
-            type: "projectile" as const,
-            angleOffsetDeg: a,
-            damage: 8,
-            projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
-          })),
+          shots: [-15, 0, 15].map((a) => projShot({ angleOffsetDeg: a, damage: 8, speed: 400 })),
         },
       ],
     });

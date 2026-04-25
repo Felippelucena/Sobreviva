@@ -38,7 +38,7 @@ export function weaponSystem(
       const pending = weapon.pendingShots.shift()!;
       const pos = world.get(id, Position);
       if (!pos) continue;
-      fireShots(world, renderer, bus, id, weapon.id, pending, pos.x, pos.y);
+      fireShot(world, renderer, bus, id, weapon.id, pending, pos.x, pos.y);
     }
   }
 }
@@ -46,22 +46,23 @@ export function weaponSystem(
 function scheduleVolleys(weapon: WeaponState, aimX: number, aimY: number): void {
   const startMs = weapon.clockMs;
   for (const volley of weapon.volleys) {
-    const volleyOriginMs = startMs + volley.startMs;
-    for (let i = 0; i < volley.projectileCount; i++) {
-      weapon.pendingShots.push({
-        atMs: volleyOriginMs + i * volley.projectileIntervalMs,
-        shots: volley.shots,
-        aimX,
-        aimY,
-      });
+    for (const shot of volley.shots) {
+      const shotOriginMs = startMs + shot.startMs;
+      for (let i = 0; i < shot.projectileCount; i++) {
+        weapon.pendingShots.push({
+          atMs: shotOriginMs + i * shot.projectileIntervalMs,
+          shot,
+          aimX,
+          aimY,
+        });
+      }
     }
   }
-  // Keep the queue ordered by time so the drain loop fires shots in temporal order
-  // even when volleys are authored out of sequence.
+  // Sort by time so shots fire in temporal order regardless of authoring order.
   weapon.pendingShots.sort((a, b) => a.atMs - b.atMs);
 }
 
-function fireShots(
+function fireShot(
   world: World,
   renderer: Renderer,
   bus: EventBus,
@@ -71,17 +72,15 @@ function fireShots(
   x: number,
   y: number,
 ): void {
-  for (const shot of pending.shots) {
-    spawnShot(world, renderer, ownerId, x, y, pending.aimX, pending.aimY, shot);
-    bus.emit("weaponFire", {
-      weaponId,
-      ownerId,
-      x,
-      y,
-      dx: pending.aimX,
-      dy: pending.aimY,
-    });
-  }
+  spawnShot(world, renderer, ownerId, x, y, pending.aimX, pending.aimY, pending.shot);
+  bus.emit("weaponFire", {
+    weaponId,
+    ownerId,
+    x,
+    y,
+    dx: pending.aimX,
+    dy: pending.aimY,
+  });
 }
 
 function findNearestEnemy(world: World, x: number, y: number): { x: number; y: number } | null {
