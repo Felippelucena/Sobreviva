@@ -8,19 +8,15 @@ function baseWeapon(): WeaponDef {
     id: "spark",
     name: "Spark",
     cooldownMs: 500,
-    volleys: [
+    shots: [
       {
-        shots: [
-          {
-            type: "projectile",
-            startMs: 0,
-            projectileCount: 1,
-            projectileIntervalMs: 0,
-            angleOffsetDeg: 0,
-            damage: 10,
-            projectile: { speed: 300, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
-          },
-        ],
+        type: "projectile",
+        startMs: 0,
+        projectileCount: 1,
+        projectileIntervalMs: 0,
+        angleOffsetDeg: 0,
+        damage: 10,
+        projectile: { speed: 300, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
       },
     ],
   };
@@ -35,15 +31,15 @@ describe("mergeDef", () => {
     expect(merged.name).toBe("Spark");
   });
 
-  it("replaces volleys array when override provides one", () => {
+  it("replaces shots array when override provides one", () => {
     const a = baseWeapon();
-    const buffedShots = baseWeapon().volleys[0]!.shots.map((s) => {
+    const buffedShots = baseWeapon().shots.map((s) => {
       if (s.type === "projectile") return { ...s, projectileCount: 3, projectileIntervalMs: 25 };
       return s;
     });
-    const b: WeaponDef = { ...baseWeapon(), volleys: [{ shots: buffedShots }] };
+    const b: WeaponDef = { ...baseWeapon(), shots: buffedShots };
     const merged = mergeDef(a, b) as WeaponDef;
-    const shot = merged.volleys[0]!.shots[0]!;
+    const shot = merged.shots[0]!;
     if (shot.type === "projectile") {
       expect(shot.projectileCount).toBe(3);
       expect(shot.projectileIntervalMs).toBe(25);

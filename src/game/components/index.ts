@@ -48,16 +48,12 @@ export interface PendingShot {
   aimY: number;
 }
 
-export interface WeaponVolleyState {
-  shots: WeaponShot[];
-}
-
 export interface WeaponState {
   id: string;
   cooldownLeft: number;
   cooldownMs: number;
   // Mutable so runtime upgrades can buff shots in-place.
-  volleys: WeaponVolleyState[];
+  shots: WeaponShot[];
   clockMs: number;
   pendingShots: PendingShot[];
 }

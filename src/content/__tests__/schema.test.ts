@@ -10,20 +10,16 @@ import {
   validateWaveEntries,
 } from "../schema";
 
-function singleProjectileVolleys(damage = 10) {
+function singleProjectileShots(damage = 10) {
   return [
     {
-      shots: [
-        {
-          type: "projectile" as const,
-          startMs: 0,
-          projectileCount: 1,
-          projectileIntervalMs: 0,
-          angleOffsetDeg: 0,
-          damage,
-          projectile: { speed: 300, radius: 4, lifetimeMs: 800 },
-        },
-      ],
+      type: "projectile" as const,
+      startMs: 0,
+      projectileCount: 1,
+      projectileIntervalMs: 0,
+      angleOffsetDeg: 0,
+      damage,
+      projectile: { speed: 300, radius: 4, lifetimeMs: 800 },
     },
   ];
 }
@@ -35,9 +31,9 @@ describe("WeaponDef", () => {
       id: "spark",
       name: "Spark",
       cooldownMs: 500,
-      volleys: singleProjectileVolleys(),
+      shots: singleProjectileShots(),
     });
-    const shot = parsed.volleys[0]!.shots[0]!;
+    const shot = parsed.shots[0]!;
     expect(shot.type).toBe("projectile");
     if (shot.type === "projectile") {
       expect(shot.projectile.pierce).toBe(0);
@@ -52,7 +48,7 @@ describe("WeaponDef", () => {
         id: "bad",
         name: "Bad",
         cooldownMs: 500,
-        volleys: singleProjectileVolleys(0),
+        shots: singleProjectileShots(0),
       }),
     ).toThrow();
   });
@@ -64,45 +60,41 @@ describe("WeaponDef", () => {
         id: "Has Spaces",
         name: "Bad",
         cooldownMs: 500,
-        volleys: singleProjectileVolleys(),
+        shots: singleProjectileShots(),
       }),
     ).toThrow();
   });
 
-  it("requires at least one volley", () => {
+  it("requires at least one shot", () => {
     expect(() =>
       WeaponDef.parse({
         kind: "weapon",
-        id: "no_volleys",
+        id: "no_shots",
         name: "X",
         cooldownMs: 500,
-        volleys: [],
+        shots: [],
       }),
     ).toThrow();
   });
 
-  it("accepts a shotgun spread (1 volley, 3 shots, all simultaneous)", () => {
+  it("accepts a shotgun spread (3 shots, all simultaneous)", () => {
     const parsed = WeaponDef.parse({
       kind: "weapon",
       id: "shotgun",
       name: "Shotgun",
       cooldownMs: 1000,
-      volleys: [
-        {
-          shots: [-15, 0, 15].map((a) => ({
-            type: "projectile" as const,
-            startMs: 0,
-            projectileCount: 1,
-            projectileIntervalMs: 0,
-            angleOffsetDeg: a,
-            damage: 8,
-            projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
-          })),
-        },
-      ],
+      shots: [-15, 0, 15].map((a) => ({
+        type: "projectile" as const,
+        startMs: 0,
+        projectileCount: 1,
+        projectileIntervalMs: 0,
+        angleOffsetDeg: a,
+        damage: 8,
+        projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
+      })),
     });
-    expect(parsed.volleys[0]!.shots).toHaveLength(3);
-    const first = parsed.volleys[0]!.shots[0]!;
+    expect(parsed.shots).toHaveLength(3);
+    const first = parsed.shots[0]!;
     if (first.type === "projectile") {
       expect(first.angleOffsetDeg).toBe(-15);
       expect(first.damage).toBe(8);
@@ -116,22 +108,18 @@ describe("WeaponDef", () => {
       id: "nova",
       name: "Nova",
       cooldownMs: 1500,
-      volleys: [
+      shots: [
         {
-          shots: [
-            {
-              type: "area",
-              startMs: 0,
-              projectileCount: 1,
-              projectileIntervalMs: 0,
-              damage: 22,
-              radius: 80,
-            },
-          ],
+          type: "area",
+          startMs: 0,
+          projectileCount: 1,
+          projectileIntervalMs: 0,
+          damage: 22,
+          radius: 80,
         },
       ],
     });
-    const shot = parsed.volleys[0]!.shots[0]!;
+    const shot = parsed.shots[0]!;
     expect(shot.type).toBe("area");
     if (shot.type === "area") {
       expect(shot.radius).toBe(80);
@@ -146,23 +134,19 @@ describe("WeaponDef", () => {
       id: "smg",
       name: "SMG",
       cooldownMs: 1000,
-      volleys: [
+      shots: [
         {
-          shots: [
-            {
-              type: "projectile",
-              startMs: 0,
-              projectileCount: 6,
-              projectileIntervalMs: 50,
-              angleOffsetDeg: 0,
-              damage: 4,
-              projectile: { speed: 500, radius: 3, lifetimeMs: 600 },
-            },
-          ],
+          type: "projectile",
+          startMs: 0,
+          projectileCount: 6,
+          projectileIntervalMs: 50,
+          angleOffsetDeg: 0,
+          damage: 4,
+          projectile: { speed: 500, radius: 3, lifetimeMs: 600 },
         },
       ],
     });
-    const shot = parsed.volleys[0]!.shots[0]!;
+    const shot = parsed.shots[0]!;
     if (shot.type === "projectile") {
       expect(shot.projectileCount).toBe(6);
       expect(shot.projectileIntervalMs).toBe(50);
@@ -184,22 +168,10 @@ describe("WeaponDef", () => {
       id: "stagger",
       name: "Stagger",
       cooldownMs: 1500,
-      volleys: [{ shots: [proj(0), proj(0), proj(200)] }],
+      shots: [proj(0), proj(0), proj(200)],
     });
-    const starts = parsed.volleys[0]!.shots.map((s) => s.startMs);
+    const starts = parsed.shots.map((s) => s.startMs);
     expect(starts).toEqual([0, 0, 200]);
-  });
-
-  it("rejects a volley with empty shots", () => {
-    expect(() =>
-      WeaponDef.parse({
-        kind: "weapon",
-        id: "bad",
-        name: "Bad",
-        cooldownMs: 500,
-        volleys: [{ shots: [] }],
-      }),
-    ).toThrow();
   });
 });
 
@@ -276,7 +248,7 @@ describe("PackFile discriminated union", () => {
           id: "spark",
           name: "Spark",
           cooldownMs: 500,
-          volleys: singleProjectileVolleys(),
+          shots: singleProjectileShots(),
         },
         {
           kind: "pickup",

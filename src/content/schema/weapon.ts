@@ -36,16 +36,12 @@ export const AreaShot = z.object({
 
 export const WeaponShot = z.discriminatedUnion("type", [ProjectileShot, AreaShot]);
 
-export const WeaponVolley = z.object({
-  shots: z.array(WeaponShot).min(1),
-});
-
 export const WeaponDef = z.object({
   kind: z.literal("weapon"),
   id: Id,
   name: z.string().min(1),
   cooldownMs: PositiveNumber,
-  volleys: z.array(WeaponVolley).min(1),
+  shots: z.array(WeaponShot).min(1),
 });
 
 export type WeaponDef = z.infer<typeof WeaponDef>;
@@ -53,4 +49,3 @@ export type WeaponProjectile = z.infer<typeof WeaponProjectile>;
 export type WeaponShot = z.infer<typeof WeaponShot>;
 export type ProjectileShot = z.infer<typeof ProjectileShot>;
 export type AreaShot = z.infer<typeof AreaShot>;
-export type WeaponVolley = z.infer<typeof WeaponVolley>;

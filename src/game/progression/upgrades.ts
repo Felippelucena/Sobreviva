@@ -15,7 +15,7 @@ export interface Upgrade {
 }
 
 function eachShot(weapon: WeaponState, fn: (shot: WeaponShot) => void): void {
-  for (const volley of weapon.volleys) for (const shot of volley.shots) fn(shot);
+  for (const shot of weapon.shots) fn(shot);
 }
 
 export const UPGRADES: readonly Upgrade[] = [

@@ -30,7 +30,7 @@ export function weaponSystem(
       const dx = target.x - pos.x;
       const dy = target.y - pos.y;
       const len = Math.hypot(dx, dy) || 1;
-      scheduleVolleys(weapon, dx / len, dy / len);
+      scheduleShots(weapon, dx / len, dy / len);
       weapon.cooldownLeft = weapon.cooldownMs;
     }
 
@@ -43,19 +43,17 @@ export function weaponSystem(
   }
 }
 
-function scheduleVolleys(weapon: WeaponState, aimX: number, aimY: number): void {
+function scheduleShots(weapon: WeaponState, aimX: number, aimY: number): void {
   const startMs = weapon.clockMs;
-  for (const volley of weapon.volleys) {
-    for (const shot of volley.shots) {
-      const shotOriginMs = startMs + shot.startMs;
-      for (let i = 0; i < shot.projectileCount; i++) {
-        weapon.pendingShots.push({
-          atMs: shotOriginMs + i * shot.projectileIntervalMs,
-          shot,
-          aimX,
-          aimY,
-        });
-      }
+  for (const shot of weapon.shots) {
+    const shotOriginMs = startMs + shot.startMs;
+    for (let i = 0; i < shot.projectileCount; i++) {
+      weapon.pendingShots.push({
+        atMs: shotOriginMs + i * shot.projectileIntervalMs,
+        shot,
+        aimX,
+        aimY,
+      });
     }
   }
   // Sort by time so shots fire in temporal order regardless of authoring order.

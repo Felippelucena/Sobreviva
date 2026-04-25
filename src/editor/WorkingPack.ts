@@ -155,19 +155,15 @@ export function blankWeapon(id: string): WeaponDef {
     id,
     name: id,
     cooldownMs: 500,
-    volleys: [
+    shots: [
       {
-        shots: [
-          {
-            type: "projectile",
-            startMs: 0,
-            projectileCount: 1,
-            projectileIntervalMs: 0,
-            angleOffsetDeg: 0,
-            damage: 10,
-            projectile: { speed: 300, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
-          },
-        ],
+        type: "projectile",
+        startMs: 0,
+        projectileCount: 1,
+        projectileIntervalMs: 0,
+        angleOffsetDeg: 0,
+        damage: 10,
+        projectile: { speed: 300, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
       },
     ],
   };

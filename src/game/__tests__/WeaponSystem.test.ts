@@ -72,7 +72,7 @@ function straightWeapon(opts: { id?: string; cooldownMs?: number } = {}): Weapon
     id: opts.id ?? "test",
     name: "Test",
     cooldownMs: opts.cooldownMs ?? 600,
-    volleys: [{ shots: [projShot()] }],
+    shots: [projShot()],
   });
 }
 
@@ -118,7 +118,7 @@ describe("WeaponSystem", () => {
       id: "smg",
       name: "SMG",
       cooldownMs: 1000,
-      volleys: [{ shots: [projShot({ projectileCount: 6, projectileIntervalMs: 50, damage: 4, speed: 500 })] }],
+      shots: [projShot({ projectileCount: 6, projectileIntervalMs: 50, damage: 4, speed: 500 })],
     });
     const playerId = buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
@@ -139,11 +139,7 @@ describe("WeaponSystem", () => {
       id: "shotgun",
       name: "Shotgun",
       cooldownMs: 1000,
-      volleys: [
-        {
-          shots: [-15, 0, 15].map((a) => projShot({ angleOffsetDeg: a, damage: 8, speed: 400 })),
-        },
-      ],
+      shots: [-15, 0, 15].map((a) => projShot({ angleOffsetDeg: a, damage: 8, speed: 400 })),
     });
     buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
@@ -167,14 +163,10 @@ describe("WeaponSystem", () => {
       id: "stagger",
       name: "Stagger",
       cooldownMs: 1500,
-      volleys: [
-        {
-          shots: [
-            projShot({ startMs: 0 }),
-            projShot({ startMs: 0 }),
-            projShot({ startMs: 200 }),
-          ],
-        },
+      shots: [
+        projShot({ startMs: 0 }),
+        projShot({ startMs: 0 }),
+        projShot({ startMs: 200 }),
       ],
     });
     const playerId = buildPlayer(world, weapon);
@@ -197,18 +189,14 @@ describe("WeaponSystem", () => {
       id: "nova",
       name: "Nova",
       cooldownMs: 1500,
-      volleys: [
+      shots: [
         {
-          shots: [
-            {
-              type: "area",
-              startMs: 0,
-              projectileCount: 1,
-              projectileIntervalMs: 0,
-              damage: 22,
-              radius: 80,
-            },
-          ],
+          type: "area",
+          startMs: 0,
+          projectileCount: 1,
+          projectileIntervalMs: 0,
+          damage: 22,
+          radius: 80,
         },
       ],
     });
@@ -226,11 +214,7 @@ describe("WeaponSystem", () => {
       id: "shotgun",
       name: "Shotgun",
       cooldownMs: 1000,
-      volleys: [
-        {
-          shots: [-15, 0, 15].map((a) => projShot({ angleOffsetDeg: a, damage: 8, speed: 400 })),
-        },
-      ],
+      shots: [-15, 0, 15].map((a) => projShot({ angleOffsetDeg: a, damage: 8, speed: 400 })),
     });
     buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
