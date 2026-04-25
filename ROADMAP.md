@@ -50,7 +50,7 @@ Jogo estilo Vampire Survivors, open source, jogável em navegador, com editor in
 - `src/ui/MainMenu.ts` — botão começar run, escolher personagem, abrir editor, abrir mods.
 - `src/ui/PauseMenu.ts` — ESC pausa, continua/sai.
 - `src/ui/RunSummary.ts` — overlay pós-morte com kills, tempo sobrevivido, XP ganho.
-- `src/persistence/SaveStore.ts` + `Keys.ts` — localStorage versionado (`correril.meta.v1`, `correril.settings.v1`).
+- `src/persistence/SaveStore.ts` + `Keys.ts` — localStorage versionado (`sobreviva.meta.v1`, `sobreviva.settings.v1`).
 - Seleção de personagem via `CharacterDef` (2–3 personagens com arma inicial distinta).
 - Meta-progression simples: unlocks de personagem/arma conforme milestones in-run.
 - Conteúdo: 2–3 armas, 3–4 inimigos, 1 mapa.
@@ -66,7 +66,7 @@ Jogo estilo Vampire Survivors, open source, jogável em navegador, com editor in
 **Entregáveis**
 
 - `src/mods/ModManager.ts` — lista packs instalados, toggle enable/disable.
-- Import de pack via `<input type="file" accept=".correrilpack.json,application/json">` ou URL.
+- Import de pack via `<input type="file" accept=".sobrevivapack.json,application/json">` ou URL.
 - Packs do usuário salvos em `localStorage` (ou IndexedDB se blob > ~1 MB).
 - `src/ui/ModsMenu.ts` — lista packs, mostra versão/conflitos, drag-reorder pra prioridade.
 - Overlay de packs sobre o base no `ContentRegistry` — merge respeita `priority` + ordem de carregamento.
@@ -86,8 +86,8 @@ Jogo estilo Vampire Survivors, open source, jogável em navegador, com editor in
 - `src/editor/PropertyGrid.ts` — form genérico gerado a partir do schema Zod de cada kind.
 - `src/editor/routes/WeaponEditor.ts`, `EnemyEditor.ts` — CRUD via PropertyGrid.
 - `src/editor/LivePreview.ts` — painel reusando `Renderer` com sim mínima: um dummy enemy + arma editada, tweaks refletem em tempo real.
-- Autosave de draft em `localStorage` (`correril.editor.draft.v1`).
-- `src/editor/ExportImport.ts` — export do pack em `.correrilpack.json` via `Blob + a[download]`.
+- Autosave de draft em `localStorage` (`sobreviva.editor.draft.v1`).
+- `src/editor/ExportImport.ts` — export do pack em `.sobrevivapack.json` via `Blob + a[download]`.
 - `WaveEditor` — timeline de spawns com drag.
 - `MapEditor` (último) — grid paint de tiles + marcação de zonas de spawn.
 
