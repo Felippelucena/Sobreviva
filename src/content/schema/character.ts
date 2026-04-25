@@ -10,6 +10,8 @@ export const CharacterDef = z.object({
   baseSpeed: PositiveNumber,
   pickupRadius: PositiveNumber.default(90),
   sprite: z.object({ color: HexColor, radius: PositiveNumber }),
+  upgradeIds: z.array(Id).default([]),
+  maxWeapons: z.number().int().positive().default(4),
 });
 
 export type CharacterDef = z.infer<typeof CharacterDef>;

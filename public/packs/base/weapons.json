@@ -6,6 +6,7 @@
       "id": "spark",
       "name": "Spark",
       "cooldownMs": 600,
+      "upgradeIds": ["damage", "cooldown", "projectile_speed", "pierce"],
       "shots": [
         {
           "type": "projectile",
@@ -23,6 +24,7 @@
       "id": "hammer",
       "name": "Hammer",
       "cooldownMs": 1100,
+      "upgradeIds": ["damage", "cooldown", "projectile_speed", "pierce"],
       "shots": [
         {
           "type": "projectile",
@@ -40,6 +42,7 @@
       "id": "needle",
       "name": "Needle",
       "cooldownMs": 220,
+      "upgradeIds": ["damage", "cooldown", "projectile_speed", "pierce"],
       "shots": [
         {
           "type": "projectile",
@@ -57,6 +60,7 @@
       "id": "shotgun",
       "name": "Bacamarte",
       "cooldownMs": 950,
+      "upgradeIds": ["damage", "cooldown", "projectile_speed", "pierce"],
       "shots": [
         {
           "type": "projectile",
@@ -92,6 +96,7 @@
       "id": "smg",
       "name": "Metralha",
       "cooldownMs": 950,
+      "upgradeIds": ["damage", "cooldown", "projectile_speed", "pierce"],
       "shots": [
         {
           "type": "projectile",
@@ -109,6 +114,7 @@
       "id": "nova",
       "name": "Nova",
       "cooldownMs": 1400,
+      "upgradeIds": ["damage", "cooldown"],
       "shots": [
         {
           "type": "area",

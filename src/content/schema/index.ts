@@ -5,6 +5,7 @@ export * from "./pickup";
 export * from "./wave";
 export * from "./character";
 export * from "./map";
+export * from "./upgrade";
 export * from "./manifest";
 export * from "./pack";
 export * from "./bundle";

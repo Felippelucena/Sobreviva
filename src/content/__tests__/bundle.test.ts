@@ -9,6 +9,7 @@ function sampleWeapon(damage = 30): WeaponDef {
     id: "spark",
     name: "Spark Plus",
     cooldownMs: 500,
+    upgradeIds: [],
     shots: [
       {
         type: "projectile",

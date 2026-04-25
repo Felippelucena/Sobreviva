@@ -233,6 +233,36 @@ body {
   opacity: 0.75;
 }
 
+.upgrade-modal__card-meta {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  text-transform: uppercase;
+}
+
+.upgrade-modal__card-tag {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 183, 3, 0.16);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.upgrade-modal__card--newWeapon {
+  border-color: rgba(255, 183, 3, 0.45);
+  background: rgba(255, 183, 3, 0.06);
+}
+
+.upgrade-modal__card--newWeapon:hover {
+  background: rgba(255, 183, 3, 0.14);
+}
+
 .menu {
   position: fixed;
   inset: 0;

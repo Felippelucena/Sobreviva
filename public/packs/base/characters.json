@@ -9,7 +9,9 @@
       "baseHp": 100,
       "baseSpeed": 180,
       "pickupRadius": 90,
-      "sprite": { "color": 5032944, "radius": 12 }
+      "sprite": { "color": 5032944, "radius": 12 },
+      "upgradeIds": ["move_speed", "max_hp", "pickup_radius"],
+      "maxWeapons": 4
     },
     {
       "kind": "character",
@@ -19,7 +21,9 @@
       "baseHp": 160,
       "baseSpeed": 140,
       "pickupRadius": 80,
-      "sprite": { "color": 15967243, "radius": 14 }
+      "sprite": { "color": 15967243, "radius": 14 },
+      "upgradeIds": ["move_speed", "max_hp", "pickup_radius"],
+      "maxWeapons": 4
     },
     {
       "kind": "character",
@@ -29,7 +33,9 @@
       "baseHp": 70,
       "baseSpeed": 220,
       "pickupRadius": 110,
-      "sprite": { "color": 10079487, "radius": 11 }
+      "sprite": { "color": 10079487, "radius": 11 },
+      "upgradeIds": ["move_speed", "max_hp", "pickup_radius"],
+      "maxWeapons": 4
     },
     {
       "kind": "character",
@@ -39,7 +45,9 @@
       "baseHp": 110,
       "baseSpeed": 170,
       "pickupRadius": 90,
-      "sprite": { "color": 16751052, "radius": 12 }
+      "sprite": { "color": 16751052, "radius": 12 },
+      "upgradeIds": ["move_speed", "max_hp", "pickup_radius"],
+      "maxWeapons": 4
     },
     {
       "kind": "character",
@@ -49,7 +57,9 @@
       "baseHp": 90,
       "baseSpeed": 175,
       "pickupRadius": 90,
-      "sprite": { "color": 7405567, "radius": 12 }
+      "sprite": { "color": 7405567, "radius": 12 },
+      "upgradeIds": ["move_speed", "max_hp", "pickup_radius"],
+      "maxWeapons": 4
     },
     {
       "kind": "character",
@@ -59,7 +69,9 @@
       "baseHp": 95,
       "baseSpeed": 165,
       "pickupRadius": 100,
-      "sprite": { "color": 16751052, "radius": 13 }
+      "sprite": { "color": 16751052, "radius": 13 },
+      "upgradeIds": ["move_speed", "max_hp", "pickup_radius"],
+      "maxWeapons": 4
     }
   ]
 }

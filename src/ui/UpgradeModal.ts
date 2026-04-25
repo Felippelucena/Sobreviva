@@ -1,11 +1,11 @@
-import type { Upgrade } from "../game/progression/upgrades";
+import type { LevelUpCard } from "../game/progression/LevelUpPool";
 
 export class UpgradeModal {
   private root: HTMLDivElement | null = null;
 
   constructor(private readonly host: HTMLElement) {}
 
-  show(options: readonly Upgrade[], onPick: (u: Upgrade) => void): void {
+  show(cards: readonly LevelUpCard[], onPick: (card: LevelUpCard) => void): void {
     this.close();
     const root = document.createElement("div");
     root.className = "upgrade-modal";
@@ -16,19 +16,17 @@ export class UpgradeModal {
         <div class="upgrade-modal__cards"></div>
       </div>
     `;
-    const cards = root.querySelector<HTMLDivElement>(".upgrade-modal__cards")!;
-    for (const u of options) {
+    const cardsEl = root.querySelector<HTMLDivElement>(".upgrade-modal__cards")!;
+    for (const card of cards) {
       const btn = document.createElement("button");
       btn.className = "upgrade-modal__card";
-      btn.innerHTML = `
-        <div class="upgrade-modal__card-name">${escapeHtml(u.name)}</div>
-        <div class="upgrade-modal__card-desc">${escapeHtml(u.desc)}</div>
-      `;
+      btn.classList.add(`upgrade-modal__card--${card.kind}`);
+      btn.innerHTML = renderCard(card);
       btn.addEventListener("click", () => {
         this.close();
-        onPick(u);
+        onPick(card);
       });
-      cards.appendChild(btn);
+      cardsEl.appendChild(btn);
     }
     this.host.appendChild(root);
     this.root = root;
@@ -48,6 +46,22 @@ export class UpgradeModal {
   dispose(): void {
     this.close();
   }
+}
+
+function renderCard(card: LevelUpCard): string {
+  if (card.kind === "newWeapon") {
+    return `
+      <div class="upgrade-modal__card-tag">Nova arma!</div>
+      <div class="upgrade-modal__card-name">${escapeHtml(card.weapon.name)}</div>
+      <div class="upgrade-modal__card-desc">Equipa uma arma adicional para esta run.</div>
+    `;
+  }
+  const { upgrade, nextLevel } = card;
+  return `
+    <div class="upgrade-modal__card-name">${escapeHtml(upgrade.name)}</div>
+    <div class="upgrade-modal__card-desc">${escapeHtml(upgrade.desc)}</div>
+    <div class="upgrade-modal__card-meta">Nível ${nextLevel} / ${upgrade.maxLevel}</div>
+  `;
 }
 
 function escapeHtml(s: string): string {

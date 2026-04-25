@@ -9,6 +9,8 @@ import {
   PackFile,
   PackManifest,
   PickupDef,
+  UpgradeDef,
+  validateUpgradeDef,
   WaveDef,
   WeaponDef,
 } from "../schema";
@@ -54,6 +56,7 @@ describe("coherence: AnyDef ↔ DefByKind ↔ Editor ↔ packs", () => {
       wave: WaveDef,
       character: CharacterDef,
       map: MapDef,
+      upgrade: UpgradeDef,
     };
     for (const kind of KINDS) {
       const schema = schemaByKind[kind];
@@ -95,6 +98,53 @@ describe("coherence: AnyDef ↔ DefByKind ↔ Editor ↔ packs", () => {
         weaponIds.has(ch.startWeaponId),
         `character "${ch.id}" startWeaponId "${ch.startWeaponId}" not found among base weapons`,
       ).toBe(true);
+    }
+  });
+
+  it("weapon.upgradeIds and character.upgradeIds reference upgrades with matching scope", () => {
+    const manifest = PackManifest.parse(readJson(join(PACKS_ROOT, "base", "manifest.json")));
+    const upgradesById = new Map<string, ReturnType<typeof UpgradeDef.parse>>();
+    const weapons: { id: string; upgradeIds: readonly string[] }[] = [];
+    const characters: { id: string; upgradeIds: readonly string[] }[] = [];
+    for (const relative of manifest.files) {
+      const parsed = PackFile.parse(readJson(join(PACKS_ROOT, "base", relative)));
+      for (const def of parsed.defs) {
+        if (def.kind === "upgrade") upgradesById.set(def.id, def);
+        if (def.kind === "weapon") weapons.push({ id: def.id, upgradeIds: def.upgradeIds });
+        if (def.kind === "character") characters.push({ id: def.id, upgradeIds: def.upgradeIds });
+      }
+    }
+    for (const w of weapons) {
+      for (const uid of w.upgradeIds) {
+        const u = upgradesById.get(uid);
+        expect(u, `weapon "${w.id}" references upgrade "${uid}" that does not exist`).toBeDefined();
+        expect(
+          u!.scope,
+          `weapon "${w.id}" references upgrade "${uid}" with scope "${u!.scope}" (expected "weapon")`,
+        ).toBe("weapon");
+      }
+    }
+    for (const c of characters) {
+      for (const uid of c.upgradeIds) {
+        const u = upgradesById.get(uid);
+        expect(u, `character "${c.id}" references upgrade "${uid}" that does not exist`).toBeDefined();
+        expect(
+          u!.scope,
+          `character "${c.id}" references upgrade "${uid}" with scope "${u!.scope}" (expected "character")`,
+        ).toBe("character");
+      }
+    }
+  });
+
+  it("every upgrade has values.length === maxLevel and passes validateUpgradeDef", () => {
+    const manifest = PackManifest.parse(readJson(join(PACKS_ROOT, "base", "manifest.json")));
+    for (const relative of manifest.files) {
+      const parsed = PackFile.parse(readJson(join(PACKS_ROOT, "base", relative)));
+      for (const def of parsed.defs) {
+        if (def.kind !== "upgrade") continue;
+        const err = validateUpgradeDef(def);
+        expect(err, `upgrade "${def.id}" failed: ${err ?? ""}`).toBeNull();
+      }
     }
   });
 });

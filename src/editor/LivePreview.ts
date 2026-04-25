@@ -8,11 +8,11 @@ import { SpatialGrid } from "../engine/SpatialGrid";
 import { World, type EntityId } from "../engine/World";
 import type { CharacterDef, EnemyDef, WeaponDef } from "../content/schema";
 import { GameState } from "../game/GameState";
-import { Health, PlayerTag, Position, WeaponState } from "../game/components";
+import { EquippedWeapons, Health, PlayerTag, Position } from "../game/components";
 import {
+  equipWeapon,
   spawnEnemy,
   spawnPlayerFromCharacter,
-  weaponStateFromDef,
 } from "../game/factories";
 import { aiSystem } from "../game/systems/AISystem";
 import {
@@ -30,6 +30,7 @@ const FALLBACK_WEAPON: WeaponDef = {
   id: "_preview",
   name: "Preview",
   cooldownMs: 500,
+  upgradeIds: [],
   shots: [
     {
       type: "projectile",
@@ -64,6 +65,8 @@ const FALLBACK_CHARACTER: CharacterDef = {
   baseSpeed: 0,
   pickupRadius: 10,
   sprite: { color: 0x4cc9f0, radius: 12 },
+  upgradeIds: [],
+  maxWeapons: 1,
 };
 
 const SPAWN_INTERVAL_MS = 550;
@@ -105,8 +108,13 @@ export class LivePreview {
   setWeapon(def: WeaponDef | undefined): void {
     this.currentWeapon = def ?? FALLBACK_WEAPON;
     if (this.playerId !== null) {
-      this.world.remove(this.playerId, WeaponState);
-      this.world.add(this.playerId, WeaponState, weaponStateFromDef(this.currentWeapon));
+      const equipped = this.world.get(this.playerId, EquippedWeapons);
+      if (equipped) {
+        for (const wid of equipped.weaponEntityIds) this.world.destroyEntity(wid);
+        equipped.weaponEntityIds = [];
+      }
+      this.world.flushDestroyed();
+      equipWeapon(this.world, this.playerId, this.currentWeapon);
     }
   }
 

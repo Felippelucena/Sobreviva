@@ -7,8 +7,10 @@ import type {
   AnyDef,
   EnemyDef,
   PickupDef,
+  UpgradeDef,
   WeaponDef,
 } from "../content/schema";
+import { validateUpgradeDef } from "../content/schema/upgrade";
 import { EnemyTag, Position } from "../game/components";
 import { spawnPickup } from "../game/factories";
 import type { GameState } from "../game/GameState";
@@ -31,6 +33,7 @@ export interface ModApi {
   registerWeapon(def: WeaponDef): void;
   registerEnemy(def: EnemyDef): void;
   registerPickup(def: PickupDef): void;
+  registerUpgrade(def: UpgradeDef): void;
   on<K extends keyof GameEvents>(event: K, handler: EventHandler<GameEvents[K]>): void;
   rng: ModApiRng;
   world: WorldFacade;
@@ -84,6 +87,14 @@ export function createModApi(runtime: ModRuntime, ctxRef: { value: GameContext |
     registerWeapon: (def) => runtime.dynamicDefs.push(def),
     registerEnemy: (def) => runtime.dynamicDefs.push(def),
     registerPickup: (def) => runtime.dynamicDefs.push(def),
+    registerUpgrade: (def) => {
+      const err = validateUpgradeDef(def);
+      if (err) {
+        console.warn(`[mod:${runtime.packId}] registerUpgrade rejected: ${err}`);
+        return;
+      }
+      runtime.dynamicDefs.push(def);
+    },
     on: (event, handler) => {
       let list = runtime.handlers.get(event);
       if (!list) {

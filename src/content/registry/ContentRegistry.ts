@@ -6,6 +6,7 @@ import type {
   EnemyDef,
   MapDef,
   PickupDef,
+  UpgradeDef,
   WaveDef,
   WeaponDef,
 } from "../schema";
@@ -17,6 +18,7 @@ export type DefByKind = {
   wave: WaveDef;
   character: CharacterDef;
   map: MapDef;
+  upgrade: UpgradeDef;
 };
 
 export type DefKind = keyof DefByKind;

@@ -15,11 +15,13 @@ import {
   EnemyAI,
   EnemySource,
   EnemyTag,
+  EquippedWeapons,
   FadeOverLife,
   FlashTint,
   Health,
   Hitbox,
   Lifetime,
+  OwnedBy,
   Pickup,
   PickupTag,
   PlayerProgress,
@@ -28,6 +30,7 @@ import {
   Projectile,
   ProjectileTag,
   SpriteRef,
+  UpgradeLevels,
   Velocity,
   WeaponState,
   XpDrop,
@@ -57,7 +60,6 @@ export function spawnPlayerFromCharacter(
   world.add(id, Hitbox, { radius: character.sprite.radius });
   world.add(id, PlayerTag, true);
   world.add(id, FlashTint, { until: 0, color: 0xffffff, base: character.sprite.color, graphics: g });
-  world.add(id, WeaponState, weaponStateFromDef(weapon));
   world.add(id, PlayerProgress, {
     level: 1,
     xp: 0,
@@ -65,12 +67,26 @@ export function spawnPlayerFromCharacter(
     pickupRadius: character.pickupRadius,
     pendingLevelUps: 0,
   });
+  world.add(id, UpgradeLevels, { byUpgradeId: new Map() });
+  world.add(id, EquippedWeapons, { weaponEntityIds: [], maxWeapons: character.maxWeapons });
+  equipWeapon(world, id, weapon);
   return id;
+}
+
+export function equipWeapon(world: World, ownerId: EntityId, weapon: WeaponDef): EntityId {
+  const wid = world.createEntity();
+  world.add(wid, WeaponState, weaponStateFromDef(weapon));
+  world.add(wid, OwnedBy, { ownerId });
+  world.add(wid, UpgradeLevels, { byUpgradeId: new Map() });
+  const equipped = world.get(ownerId, EquippedWeapons);
+  if (equipped) equipped.weaponEntityIds.push(wid);
+  return wid;
 }
 
 export function weaponStateFromDef(weapon: WeaponDef): WeaponState {
   return {
     id: weapon.id,
+    baseDefId: weapon.id,
     cooldownLeft: 0,
     cooldownMs: weapon.cooldownMs,
     // Deep clone so runtime upgrades can mutate without touching the frozen def.

@@ -50,12 +50,27 @@ export interface PendingShot {
 
 export interface WeaponState {
   id: string;
+  // Used by applyUpgrades to recompute the state from the frozen def + upgrade levels.
+  baseDefId: string;
   cooldownLeft: number;
   cooldownMs: number;
   // Mutable so runtime upgrades can buff shots in-place.
   shots: WeaponShot[];
   clockMs: number;
   pendingShots: PendingShot[];
+}
+
+export interface OwnedBy {
+  ownerId: EntityId;
+}
+
+export interface UpgradeLevels {
+  byUpgradeId: Map<string, number>;
+}
+
+export interface EquippedWeapons {
+  weaponEntityIds: EntityId[];
+  maxWeapons: number;
 }
 
 export interface Projectile {
@@ -126,6 +141,9 @@ export const FadeOverLife = defineComponent<FadeOverLife>("FadeOverLife");
 export const XpDrop = defineComponent<XpDrop>("XpDrop");
 export const Pickup = defineComponent<Pickup>("Pickup");
 export const PlayerProgress = defineComponent<PlayerProgress>("PlayerProgress");
+export const OwnedBy = defineComponent<OwnedBy>("OwnedBy");
+export const UpgradeLevels = defineComponent<UpgradeLevels>("UpgradeLevels");
+export const EquippedWeapons = defineComponent<EquippedWeapons>("EquippedWeapons");
 
 export const PlayerTag = defineComponent<true>("PlayerTag");
 export const EnemyTag = defineComponent<true>("EnemyTag");

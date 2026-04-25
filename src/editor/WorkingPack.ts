@@ -7,6 +7,7 @@ import type {
   EnemyDef,
   MapDef,
   PickupDef,
+  UpgradeDef,
   WaveDef,
   WeaponDef,
 } from "../content/schema";
@@ -155,6 +156,7 @@ export function blankWeapon(id: string): WeaponDef {
     id,
     name: id,
     cooldownMs: 500,
+    upgradeIds: [],
     shots: [
       {
         type: "projectile",
@@ -204,6 +206,8 @@ export function blankCharacter(id: string, startWeaponId: string): CharacterDef 
     baseSpeed: 180,
     pickupRadius: 90,
     sprite: { color: 0x4cc9f0, radius: 12 },
+    upgradeIds: [],
+    maxWeapons: 4,
   };
 }
 
@@ -225,5 +229,18 @@ export function blankWave(id: string): WaveDef {
     kind: "wave",
     id,
     entries: [{ enemyId: "runner", startSec: 0, endSec: 600, ratePerSec: 1, burst: 0, cap: 0 }],
+  };
+}
+
+export function blankUpgrade(id: string): UpgradeDef {
+  return {
+    kind: "upgrade",
+    id,
+    name: id,
+    desc: "",
+    scope: "weapon",
+    maxLevel: 3,
+    target: { path: "cooldownMs", op: "mul" },
+    values: [0.95, 0.9, 0.85],
   };
 }

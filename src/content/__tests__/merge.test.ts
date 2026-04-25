@@ -8,6 +8,7 @@ function baseWeapon(): WeaponDef {
     id: "spark",
     name: "Spark",
     cooldownMs: 500,
+    upgradeIds: [],
     shots: [
       {
         type: "projectile",

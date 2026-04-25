@@ -7,6 +7,8 @@ export interface GameEvents {
   enemyDeath: { enemyId: string; entityId: number; x: number; y: number };
   playerHit: { damage: number; hpLeft: number };
   levelUp: { level: number };
+  upgradeApplied: { upgradeId: string; level: number; targetEntityId: number };
+  weaponEquipped: { weaponId: string; weaponEntityId: number; ownerId: number };
 }
 
 type EventName = keyof GameEvents;
@@ -28,6 +30,8 @@ export class EventBus {
     enemyDeath: [],
     playerHit: [],
     levelUp: [],
+    upgradeApplied: [],
+    weaponEquipped: [],
   };
 
   on<K extends EventName>(

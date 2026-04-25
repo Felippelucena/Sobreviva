@@ -4,6 +4,7 @@ import { SchemaVersion } from "./common";
 import { EnemyDef } from "./enemy";
 import { MapDef } from "./map";
 import { PickupDef } from "./pickup";
+import { UpgradeDef } from "./upgrade";
 import { WaveDef } from "./wave";
 import { WeaponDef } from "./weapon";
 
@@ -14,6 +15,7 @@ export const AnyDef = z.discriminatedUnion("kind", [
   WaveDef,
   CharacterDef,
   MapDef,
+  UpgradeDef,
 ]);
 
 export type AnyDef = z.infer<typeof AnyDef>;

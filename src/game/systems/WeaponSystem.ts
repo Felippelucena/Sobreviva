@@ -1,7 +1,14 @@
 import type { Renderer } from "../../engine/Renderer";
 import type { World } from "../../engine/World";
 import type { EventBus } from "../../engine/events/EventBus";
-import { EnemyTag, PlayerTag, Position, WeaponState, type PendingShot } from "../components";
+import {
+  EnemyTag,
+  OwnedBy,
+  PlayerTag,
+  Position,
+  WeaponState,
+  type PendingShot,
+} from "../components";
 import { spawnShot } from "../factories";
 
 const COOLDOWN_WHEN_NO_TARGET_MS = 100;
@@ -14,13 +21,17 @@ export function weaponSystem(
 ): void {
   const dtMs = dt * 1000;
   for (const [id, weapon] of world.query(WeaponState)) {
-    if (!world.has(id, PlayerTag)) continue;
+    // Position is owned by the wielder. New code path: weapon entity has OwnedBy.
+    // Legacy (tests, simple setups): WeaponState lives on the player itself —
+    // resolve to self.
+    const ownerId = world.get(id, OwnedBy)?.ownerId ?? id;
+    if (!world.has(ownerId, PlayerTag)) continue;
 
     weapon.clockMs += dtMs;
     weapon.cooldownLeft -= dtMs;
 
     if (weapon.cooldownLeft <= 0 && weapon.pendingShots.length === 0) {
-      const pos = world.get(id, Position);
+      const pos = world.get(ownerId, Position);
       if (!pos) continue;
       const target = findNearestEnemy(world, pos.x, pos.y);
       if (!target) {
@@ -36,9 +47,9 @@ export function weaponSystem(
 
     while (weapon.pendingShots.length > 0 && weapon.pendingShots[0]!.atMs <= weapon.clockMs) {
       const pending = weapon.pendingShots.shift()!;
-      const pos = world.get(id, Position);
+      const pos = world.get(ownerId, Position);
       if (!pos) continue;
-      fireShot(world, renderer, bus, id, weapon.id, pending, pos.x, pos.y);
+      fireShot(world, renderer, bus, ownerId, weapon.id, pending, pos.x, pos.y);
     }
   }
 }

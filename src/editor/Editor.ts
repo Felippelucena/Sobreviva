@@ -7,6 +7,7 @@ import {
   EnemyDef,
   MapDef,
   PickupDef,
+  UpgradeDef,
   WaveDef,
   WeaponDef,
 } from "../content/schema";
@@ -19,6 +20,7 @@ import {
   blankEnemy,
   blankMap,
   blankPickup,
+  blankUpgrade,
   blankWave,
   blankWeapon,
   type DefKindOf,
@@ -34,6 +36,7 @@ const TABS: readonly { kind: Kind; label: string }[] = [
   { kind: "character", label: "Personagens" },
   { kind: "map", label: "Mapas" },
   { kind: "wave", label: "Ondas" },
+  { kind: "upgrade", label: "Melhorias" },
 ];
 
 export interface EditorCallbacks {
@@ -414,6 +417,9 @@ export class Editor {
       case "wave":
         def = blankWave(id);
         break;
+      case "upgrade":
+        def = blankUpgrade(id);
+        break;
     }
     this.working.upsert(def);
     this.currentId = id;
@@ -510,6 +516,8 @@ function kindLabel(kind: Kind): string {
       return "Mapas";
     case "wave":
       return "Ondas";
+    case "upgrade":
+      return "Melhorias";
   }
 }
 
@@ -519,6 +527,7 @@ function defTitle(def: AnyDef): string {
     case "enemy":
     case "character":
     case "map":
+    case "upgrade":
       return def.name;
     case "pickup":
       return `${def.effect} (${def.value})`;
@@ -539,6 +548,8 @@ function pickSchemaFor(kind: Exclude<Kind, "wave">): import("zod").ZodObject<imp
       return CharacterDef;
     case "map":
       return MapDef;
+    case "upgrade":
+      return UpgradeDef;
   }
 }
 

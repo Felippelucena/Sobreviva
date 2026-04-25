@@ -1,5 +1,6 @@
 import type { TilingSprite } from "pixi.js";
 import type { ContentRegistry } from "../content/registry/ContentRegistry";
+import type { CharacterDef } from "../content/schema/character";
 import { Audio } from "../engine/Audio";
 import { createBackgroundSprite } from "../engine/Background";
 import { Camera } from "../engine/Camera";
@@ -8,12 +9,24 @@ import { Loop } from "../engine/Loop";
 import { Renderer } from "../engine/Renderer";
 import { Rng } from "../engine/Rng";
 import { SpatialGrid } from "../engine/SpatialGrid";
-import { World } from "../engine/World";
+import { World, type EntityId } from "../engine/World";
 import { EventBus } from "../engine/events/EventBus";
 import { GameState } from "../game/GameState";
-import { PlayerProgress, Position } from "../game/components";
-import { spawnPlayerFromCharacter } from "../game/factories";
-import { pickUpgrades } from "../game/progression/UpgradePicker";
+import {
+  Health,
+  PlayerProgress,
+  Position,
+  UpgradeLevels,
+  Velocity,
+  WeaponState,
+} from "../game/components";
+import { equipWeapon, spawnPlayerFromCharacter } from "../game/factories";
+import {
+  applyUpgradesToCharacter,
+  applyUpgradesToWeapon,
+  type AppliedUpgrade,
+} from "../game/progression/applyUpgrades";
+import { buildLevelUpPool, type LevelUpCard } from "../game/progression/LevelUpPool";
 import { aiSystem } from "../game/systems/AISystem";
 import { collisionSystem } from "../game/systems/CollisionSystem";
 import { inputSystem } from "../game/systems/InputSystem";
@@ -71,6 +84,7 @@ export class Game {
   private jsDetach: (() => void) | null = null;
   private endedNotified = false;
   private externalPause = false;
+  private character!: CharacterDef;
 
   constructor(opts: GameOptions) {
     this.host = opts.host;
@@ -96,6 +110,7 @@ export class Game {
     const weapon = this.registry.get("weapon", character.startWeaponId);
     const map = this.registry.get("map", this.mapId);
     const wave = this.registry.get("wave", this.waveId);
+    this.character = character;
 
     this.state.playerId = spawnPlayerFromCharacter(
       this.world,
@@ -209,15 +224,85 @@ export class Game {
     if (this.upgradeModal.isOpen()) return;
     const progress = this.world.get(this.state.playerId, PlayerProgress);
     if (!progress || progress.pendingLevelUps <= 0) return;
-    const options = pickUpgrades(this.rng, 3);
+    const cards = buildLevelUpPool({
+      world: this.world,
+      registry: this.registry,
+      rng: this.rng,
+      playerId: this.state.playerId,
+      character: this.character,
+      count: 3,
+    });
+    if (cards.length === 0) {
+      // Nothing left to offer (all maxed, no rooms for new weapons): consume
+      // the pending level-up silently so the modal doesn't loop forever.
+      progress.pendingLevelUps = 0;
+      return;
+    }
     this.state.paused = true;
-    this.upgradeModal.show(options, (chosen) => {
-      chosen.apply(this.world, this.state.playerId!);
+    this.upgradeModal.show(cards, (chosen) => {
+      this.applyChosenCard(chosen);
       progress.pendingLevelUps -= 1;
       if (progress.pendingLevelUps <= 0 && !this.externalPause) {
         this.state.paused = false;
       }
     });
+  }
+
+  private applyChosenCard(card: LevelUpCard): void {
+    const playerId = this.state.playerId;
+    if (playerId === null) return;
+    if (card.kind === "newWeapon") {
+      const wid = equipWeapon(this.world, playerId, card.weapon);
+      this.bus.emit("weaponEquipped", {
+        weaponId: card.weapon.id,
+        weaponEntityId: wid,
+        ownerId: playerId,
+      });
+      return;
+    }
+    const { upgrade, targetEntityId, nextLevel } = card;
+    const levels = this.world.get(targetEntityId, UpgradeLevels);
+    if (!levels) return;
+    levels.byUpgradeId.set(upgrade.id, nextLevel);
+    if (upgrade.scope === "weapon") {
+      this.recomputeWeaponState(targetEntityId);
+    } else {
+      this.recomputeCharacterStats(playerId);
+    }
+    this.bus.emit("upgradeApplied", {
+      upgradeId: upgrade.id,
+      level: nextLevel,
+      targetEntityId,
+    });
+  }
+
+  private recomputeWeaponState(weaponEntityId: EntityId): void {
+    const ws = this.world.get(weaponEntityId, WeaponState);
+    if (!ws) return;
+    const baseDef = this.registry.find("weapon", ws.baseDefId);
+    if (!baseDef) return;
+    const applied = collectAppliedUpgrades(this.world, weaponEntityId, this.registry);
+    const patched = applyUpgradesToWeapon(baseDef, applied);
+    ws.cooldownMs = patched.cooldownMs;
+    ws.shots = patched.shots.map((s) => structuredClone(s));
+    // Pending shots reference old shot objects — drop them so the next firing
+    // schedules from the patched shots.
+    ws.pendingShots = [];
+  }
+
+  private recomputeCharacterStats(playerId: EntityId): void {
+    const applied = collectAppliedUpgrades(this.world, playerId, this.registry);
+    const patched = applyUpgradesToCharacter(this.character, applied);
+    const health = this.world.get(playerId, Health);
+    if (health) {
+      const delta = patched.baseHp - health.max;
+      health.max = patched.baseHp;
+      health.current = Math.max(1, Math.min(health.max, health.current + delta));
+    }
+    const velocity = this.world.get(playerId, Velocity);
+    if (velocity) velocity.speed = patched.baseSpeed;
+    const progress = this.world.get(playerId, PlayerProgress);
+    if (progress) progress.pickupRadius = patched.pickupRadius;
   }
 
   private render(alpha: number): void {
@@ -267,4 +352,21 @@ export class Game {
     this.audio.dispose();
     this.renderer.dispose();
   }
+}
+
+function collectAppliedUpgrades(
+  world: World,
+  entityId: EntityId,
+  registry: ContentRegistry,
+): AppliedUpgrade[] {
+  const levels = world.get(entityId, UpgradeLevels);
+  if (!levels) return [];
+  const out: AppliedUpgrade[] = [];
+  for (const [upgradeId, level] of levels.byUpgradeId) {
+    if (level <= 0) continue;
+    const def = registry.find("upgrade", upgradeId);
+    if (!def) continue;
+    out.push({ def, level });
+  }
+  return out;
 }

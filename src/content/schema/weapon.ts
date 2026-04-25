@@ -42,6 +42,7 @@ export const WeaponDef = z.object({
   name: z.string().min(1),
   cooldownMs: PositiveNumber,
   shots: z.array(WeaponShot).min(1),
+  upgradeIds: z.array(Id).default([]),
 });
 
 export type WeaponDef = z.infer<typeof WeaponDef>;
