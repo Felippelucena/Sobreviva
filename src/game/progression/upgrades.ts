@@ -4,6 +4,7 @@ import {
   PlayerProgress,
   Velocity,
   WeaponState,
+  type WeaponBurstConfig,
 } from "../components";
 
 export interface Upgrade {
@@ -13,6 +14,10 @@ export interface Upgrade {
   apply: (world: World, playerId: EntityId) => void;
 }
 
+function eachShot(burst: WeaponBurstConfig, fn: (shot: NonNullable<WeaponBurstConfig["volleys"][number]>["shots"][number]) => void): void {
+  for (const volley of burst.volleys) for (const shot of volley.shots) fn(shot);
+}
+
 export const UPGRADES: readonly Upgrade[] = [
   {
     id: "damage",
@@ -20,7 +25,10 @@ export const UPGRADES: readonly Upgrade[] = [
     desc: "+20% de dano da arma",
     apply: (world, id) => {
       const w = world.get(id, WeaponState);
-      if (w) w.damage *= 1.2;
+      if (!w) return;
+      eachShot(w.burst, (s) => {
+        s.damage *= 1.2;
+      });
     },
   },
   {
@@ -38,7 +46,10 @@ export const UPGRADES: readonly Upgrade[] = [
     desc: "+15% de velocidade de projétil",
     apply: (world, id) => {
       const w = world.get(id, WeaponState);
-      if (w) w.projectileSpeed *= 1.15;
+      if (!w) return;
+      eachShot(w.burst, (s) => {
+        if (s.type === "projectile") s.projectile.speed *= 1.15;
+      });
     },
   },
   {
@@ -47,7 +58,10 @@ export const UPGRADES: readonly Upgrade[] = [
     desc: "Projéteis atravessam +1 inimigo",
     apply: (world, id) => {
       const w = world.get(id, WeaponState);
-      if (w) w.pierce += 1;
+      if (!w) return;
+      eachShot(w.burst, (s) => {
+        if (s.type === "projectile") s.projectile.pierce += 1;
+      });
     },
   },
   {

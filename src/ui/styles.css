@@ -1198,16 +1198,18 @@ body {
   border-left: 2px solid rgba(255, 255, 255, 0.08);
   padding-left: 10px;
   width: 100%;
+  min-width: 0;
 }
 
 .pg__array-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
+  gap: 8px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.03);
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
 }
 
 .pg__array-item-head {
@@ -1220,6 +1222,29 @@ body {
   font-size: 12px;
   opacity: 0.7;
   font-weight: 600;
+}
+
+/* Inside array items, stack label and input vertically so the input gets full width
+   even when the form column is narrow (volleys → shots → projectile is 3 levels deep). */
+.pg__array-item .pg__row {
+  grid-template-columns: 1fr;
+  gap: 4px;
+  align-items: stretch;
+}
+
+.pg__array-item .pg__row--group {
+  padding: 8px 10px;
+}
+
+.pg__array-item .pg__label {
+  font-size: 11px;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pg__object {
+  min-width: 0;
 }
 
 .pg__btn {

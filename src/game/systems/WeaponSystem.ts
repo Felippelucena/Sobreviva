@@ -1,7 +1,6 @@
 import type { Renderer } from "../../engine/Renderer";
 import type { World } from "../../engine/World";
 import type { EventBus } from "../../engine/events/EventBus";
-import type { WeaponShot } from "../../content/schema/weapon";
 import { EnemyTag, PlayerTag, Position, WeaponState, type PendingVolley } from "../components";
 import { spawnShot } from "../factories";
 
@@ -31,9 +30,7 @@ export function weaponSystem(
       const dx = target.x - pos.x;
       const dy = target.y - pos.y;
       const len = Math.hypot(dx, dy) || 1;
-      const ux = dx / len;
-      const uy = dy / len;
-      scheduleBurst(weapon, ux, uy);
+      scheduleBurst(weapon, dx / len, dy / len);
       weapon.cooldownLeft = weapon.cooldownMs;
     }
 
@@ -49,29 +46,14 @@ export function weaponSystem(
 function scheduleBurst(weapon: WeaponState, aimX: number, aimY: number): void {
   const burst = weapon.burst;
   const startMs = weapon.clockMs;
-  if (burst.volleys && burst.volleys.length > 0) {
-    let cursorMs = startMs;
+  let cursorMs = startMs;
+  // Outer loop: volleyCount tells how many times to repeat the volleys[] sequence.
+  for (let rep = 0; rep < burst.volleyCount; rep++) {
     for (const volley of burst.volleys) {
-      const at = volley.delayMs != null ? startMs + volley.delayMs : cursorMs;
+      const at = volley.delayMs != null ? cursorMs + volley.delayMs : cursorMs;
       weapon.pendingVolleys.push({ atMs: at, shots: volley.shots, aimX, aimY });
       cursorMs = at + burst.volleyIntervalMs;
     }
-    return;
-  }
-  // Metronome mode: repeat the default volley `volleyCount` times spaced by interval.
-  // Default volley = single straight projectile (also the `burst === null` case is
-  // pre-baked in burstConfigFromDef as a one-volley list, so this branch is reached
-  // only when an author specified volleyCount + interval without a volleys list).
-  const defaultShots: readonly WeaponShot[] = [
-    { type: "projectile", angleOffsetDeg: 0, damageMultiplier: 1, speedMultiplier: 1 },
-  ];
-  for (let i = 0; i < burst.volleyCount; i++) {
-    weapon.pendingVolleys.push({
-      atMs: startMs + i * burst.volleyIntervalMs,
-      shots: defaultShots,
-      aimX,
-      aimY,
-    });
   }
 }
 
@@ -86,7 +68,7 @@ function fireVolley(
   y: number,
 ): void {
   for (const shot of volley.shots) {
-    spawnShot(world, renderer, ownerId, x, y, volley.aimX, volley.aimY, shot, weapon);
+    spawnShot(world, renderer, ownerId, x, y, volley.aimX, volley.aimY, shot);
     bus.emit("weaponFire", {
       weaponId: weapon.id,
       ownerId,

@@ -44,8 +44,8 @@ describe("WorkingPack", () => {
     const wp = new WorkingPack(store);
     wp.upsert(blankWeapon("spark"));
     expect(wp.list("weapon")).toHaveLength(1);
-    wp.upsert({ ...blankWeapon("spark"), damage: 999 });
-    expect(wp.list("weapon")[0]!.damage).toBe(999);
+    wp.upsert({ ...blankWeapon("spark"), cooldownMs: 999 });
+    expect(wp.list("weapon")[0]!.cooldownMs).toBe(999);
   });
 
   it("renames via previousId without duplicating", () => {

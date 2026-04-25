@@ -31,7 +31,6 @@ import {
   Velocity,
   WeaponState,
   XpDrop,
-  type WeaponBurstConfig,
 } from "./components";
 import { xpForLevel } from "./progression/levels";
 
@@ -74,31 +73,17 @@ export function weaponStateFromDef(weapon: WeaponDef): WeaponState {
     id: weapon.id,
     cooldownLeft: 0,
     cooldownMs: weapon.cooldownMs,
-    damage: weapon.damage,
-    projectileSpeed: weapon.projectile.speed,
-    projectileLifetimeMs: weapon.projectile.lifetimeMs,
-    projectileRadius: weapon.projectile.radius,
-    projectileColor: weapon.projectile.color,
-    pierce: weapon.projectile.pierce,
-    burst: burstConfigFromDef(weapon),
+    burst: {
+      volleyCount: weapon.burst.volleyCount,
+      volleyIntervalMs: weapon.burst.volleyIntervalMs,
+      // Deep clone so runtime upgrades can mutate without touching the frozen def.
+      volleys: weapon.burst.volleys.map((v) => ({
+        ...(v.delayMs != null ? { delayMs: v.delayMs } : {}),
+        shots: v.shots.map((s) => structuredClone(s) as WeaponShot),
+      })),
+    },
     clockMs: 0,
     pendingVolleys: [],
-  };
-}
-
-const DEFAULT_STRAIGHT_VOLLEY: { shots: readonly WeaponShot[] } = {
-  shots: [{ type: "projectile", angleOffsetDeg: 0, damageMultiplier: 1, speedMultiplier: 1 }],
-};
-
-function burstConfigFromDef(weapon: WeaponDef): WeaponBurstConfig {
-  const burst = weapon.burst;
-  if (!burst) {
-    return { volleyCount: 1, volleyIntervalMs: 0, volleys: [DEFAULT_STRAIGHT_VOLLEY] };
-  }
-  return {
-    volleyCount: burst.volleyCount,
-    volleyIntervalMs: burst.volleyIntervalMs,
-    volleys: burst.volleys ?? null,
   };
 }
 
@@ -128,37 +113,6 @@ export function spawnEnemy(
   return id;
 }
 
-export function spawnProjectile(
-  world: World,
-  renderer: Renderer,
-  owner: EntityId,
-  x: number,
-  y: number,
-  vx: number,
-  vy: number,
-  state: WeaponState,
-): EntityId {
-  const id = world.createEntity();
-  const g = new Graphics().circle(0, 0, state.projectileRadius).fill(state.projectileColor);
-  g.position.set(x, y);
-  renderer.world.addChild(g);
-
-  world.add(id, Position, { x, y, prevX: x, prevY: y });
-  world.add(id, Velocity, { vx, vy, speed: Math.hypot(vx, vy) });
-  world.add(id, SpriteRef, { display: g });
-  world.add(id, Hitbox, { radius: state.projectileRadius });
-  world.add(id, Lifetime, { remainingMs: state.projectileLifetimeMs });
-  world.add(id, ProjectileTag, true);
-  world.add(id, Projectile, {
-    damage: state.damage,
-    pierceLeft: state.pierce,
-    ownerId: owner,
-    radius: state.projectileRadius,
-    hit: new Set(),
-  });
-  return id;
-}
-
 export function spawnShot(
   world: World,
   renderer: Renderer,
@@ -168,26 +122,22 @@ export function spawnShot(
   aimX: number,
   aimY: number,
   shot: WeaponShot,
-  state: WeaponState,
 ): EntityId {
   if (shot.type === "projectile") {
     const angle = Math.atan2(aimY, aimX) + (shot.angleOffsetDeg * Math.PI) / 180;
-    const baseSpeed = shot.projectile?.speed ?? state.projectileSpeed;
-    const speed = baseSpeed * shot.speedMultiplier;
-    const vx = Math.cos(angle) * speed;
-    const vy = Math.sin(angle) * speed;
+    const vx = Math.cos(angle) * shot.projectile.speed;
+    const vy = Math.sin(angle) * shot.projectile.speed;
     return spawnProjectileLowLevel(world, renderer, owner, originX, originY, vx, vy, {
-      damage: state.damage * shot.damageMultiplier,
-      radius: shot.projectile?.radius ?? state.projectileRadius,
-      color: shot.projectile?.color ?? state.projectileColor,
-      lifetimeMs: shot.projectile?.lifetimeMs ?? state.projectileLifetimeMs,
-      pierce: shot.projectile?.pierce ?? state.pierce,
+      damage: shot.damage,
+      radius: shot.projectile.radius,
+      color: shot.projectile.color,
+      lifetimeMs: shot.projectile.lifetimeMs,
+      pierce: shot.projectile.pierce,
     });
   }
-  // area
   const x = originX + shot.originOffsetX;
   const y = originY + shot.originOffsetY;
-  return spawnAreaHit(world, renderer, owner, x, y, shot.radius, state.damage * shot.damageMultiplier, shot.lifetimeMs, shot.color);
+  return spawnAreaHit(world, renderer, owner, x, y, shot.radius, shot.damage, shot.lifetimeMs, shot.color);
 }
 
 interface ProjectileSpawnOpts {

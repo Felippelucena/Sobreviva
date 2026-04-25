@@ -9,26 +9,17 @@ export const WeaponProjectile = z.object({
   color: HexColor.default(0xffd166),
 });
 
-export const WeaponProjectileOverride = z.object({
-  speed: PositiveNumber.optional(),
-  radius: PositiveNumber.optional(),
-  lifetimeMs: PositiveNumber.optional(),
-  pierce: NonNegativeInt.optional(),
-  color: HexColor.optional(),
-});
-
 export const ProjectileShot = z.object({
   type: z.literal("projectile"),
   angleOffsetDeg: z.number().default(0),
-  damageMultiplier: PositiveNumber.default(1),
-  speedMultiplier: PositiveNumber.default(1),
-  projectile: WeaponProjectileOverride.optional(),
+  damage: PositiveNumber,
+  projectile: WeaponProjectile,
 });
 
 export const AreaShot = z.object({
   type: z.literal("area"),
+  damage: PositiveNumber,
   radius: PositiveNumber,
-  damageMultiplier: PositiveNumber.default(1),
   originOffsetX: z.number().default(0),
   originOffsetY: z.number().default(0),
   lifetimeMs: NonNegativeNumber.default(0),
@@ -45,22 +36,19 @@ export const WeaponVolley = z.object({
 export const WeaponBurst = z.object({
   volleyCount: z.number().int().positive().default(1),
   volleyIntervalMs: NonNegativeNumber.default(0),
-  volleys: z.array(WeaponVolley).optional(),
+  volleys: z.array(WeaponVolley).min(1),
 });
 
 export const WeaponDef = z.object({
   kind: z.literal("weapon"),
   id: Id,
   name: z.string().min(1),
-  damage: PositiveNumber,
   cooldownMs: PositiveNumber,
-  projectile: WeaponProjectile,
-  burst: WeaponBurst.optional(),
+  burst: WeaponBurst,
 });
 
 export type WeaponDef = z.infer<typeof WeaponDef>;
 export type WeaponProjectile = z.infer<typeof WeaponProjectile>;
-export type WeaponProjectileOverride = z.infer<typeof WeaponProjectileOverride>;
 export type WeaponShot = z.infer<typeof WeaponShot>;
 export type ProjectileShot = z.infer<typeof ProjectileShot>;
 export type AreaShot = z.infer<typeof AreaShot>;

@@ -300,12 +300,20 @@ export class Editor {
     }
 
     const schema = pickSchemaFor(kind);
+    const formKind = kind;
     const grid = renderPropertyGrid({
       schema,
-      value: def as unknown as Record<string, unknown>,
+      // Read live from WorkingPack so closures never use a stale def reference.
+      getValue: () => {
+        const id = this.currentId;
+        const cur = id ? this.working.get(formKind, id) : undefined;
+        return (cur ?? def) as unknown as Record<string, unknown>;
+      },
       omit: ["kind", "id"],
       onChange: (next) => {
-        const merged = { ...def, ...next } as AnyDef;
+        const id = this.currentId;
+        const cur = (id ? this.working.get(formKind, id) : undefined) ?? def;
+        const merged = { ...cur, ...next } as AnyDef;
         this.patchDef(merged);
       },
     });

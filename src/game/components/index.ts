@@ -51,19 +51,14 @@ export interface PendingVolley {
 export interface WeaponBurstConfig {
   volleyCount: number;
   volleyIntervalMs: number;
-  volleys: readonly { delayMs?: number; shots: readonly WeaponShot[] }[] | null;
+  // Mutable so runtime upgrades can buff shots in-place.
+  volleys: { delayMs?: number; shots: WeaponShot[] }[];
 }
 
 export interface WeaponState {
   id: string;
   cooldownLeft: number;
   cooldownMs: number;
-  damage: number;
-  projectileSpeed: number;
-  projectileLifetimeMs: number;
-  projectileRadius: number;
-  projectileColor: number;
-  pierce: number;
   burst: WeaponBurstConfig;
   clockMs: number;
   pendingVolleys: PendingVolley[];

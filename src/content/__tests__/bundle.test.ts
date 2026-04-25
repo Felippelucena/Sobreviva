@@ -1,7 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { bundleFromLoadedPack, parseBundle } from "../bundle";
 import type { LoadedPack } from "../PackLoader";
-import type { BundledPack } from "../schema";
+import type { BundledPack, WeaponDef } from "../schema";
+
+function sampleWeapon(damage = 30): WeaponDef {
+  return {
+    kind: "weapon",
+    id: "spark",
+    name: "Spark Plus",
+    cooldownMs: 500,
+    burst: {
+      volleyCount: 1,
+      volleyIntervalMs: 0,
+      volleys: [
+        {
+          shots: [
+            {
+              type: "projectile",
+              angleOffsetDeg: 0,
+              damage,
+              projectile: { speed: 400, radius: 5, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
 
 function validBundle(): BundledPack {
   return {
@@ -13,16 +38,7 @@ function validBundle(): BundledPack {
       priority: 50,
       dependsOn: [],
     },
-    defs: [
-      {
-        kind: "weapon",
-        id: "spark",
-        name: "Spark Plus",
-        damage: 30,
-        cooldownMs: 500,
-        projectile: { speed: 400, radius: 5, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
-      },
-    ],
+    defs: [sampleWeapon()],
     scripts: [],
   };
 }
@@ -70,16 +86,7 @@ describe("bundleFromLoadedPack", () => {
         files: ["weapons.json"],
         js: [],
       },
-      defs: [
-        {
-          kind: "weapon",
-          id: "spark",
-          name: "Spark",
-          damage: 10,
-          cooldownMs: 500,
-          projectile: { speed: 300, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
-        },
-      ],
+      defs: [sampleWeapon(10)],
     };
     const bundle = bundleFromLoadedPack(pack);
     expect(bundle.manifest.id).toBe("base");

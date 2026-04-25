@@ -5,7 +5,8 @@ const READ_ONLY_FIELDS = new Set(["kind"]);
 
 export interface PropertyGridOptions<T extends Record<string, unknown>> {
   schema: z.ZodObject<z.ZodRawShape>;
-  value: T;
+  /** Live getter so that closures always read the latest state, never a stale capture. */
+  getValue: () => T;
   /** Fields to hide (rendered but as read-only summary). */
   omit?: readonly string[];
   onChange: (next: T) => void;
@@ -19,10 +20,17 @@ export function renderPropertyGrid<T extends Record<string, unknown>>(
   const shape = opts.schema.shape;
   for (const [fieldKey, fieldSchema] of Object.entries(shape)) {
     if (opts.omit?.includes(fieldKey)) continue;
-    const row = renderField(fieldKey, fieldKey, fieldSchema as z.ZodTypeAny, (opts.value as Record<string, unknown>)[fieldKey], (newValue) => {
-      const next = { ...(opts.value as Record<string, unknown>), [fieldKey]: newValue } as T;
-      opts.onChange(next);
-    });
+    const row = renderField(
+      fieldKey,
+      fieldKey,
+      fieldSchema as z.ZodTypeAny,
+      () => (opts.getValue() as Record<string, unknown>)[fieldKey],
+      (newValue) => {
+        const cur = opts.getValue() as Record<string, unknown>;
+        const next = { ...cur, [fieldKey]: newValue } as T;
+        opts.onChange(next);
+      },
+    );
     root.appendChild(row);
   }
   return root;
@@ -32,7 +40,7 @@ function renderField(
   key: string,
   label: string,
   schema: z.ZodTypeAny,
-  value: unknown,
+  getCurrent: () => unknown,
   onChange: (newValue: unknown) => void,
 ): HTMLElement {
   const row = document.createElement("div");
@@ -44,25 +52,26 @@ function renderField(
 
   const base = unwrap(schema);
   const typeName = base._def.typeName as string;
+  const initial = getCurrent();
 
   if (READ_ONLY_FIELDS.has(key)) {
-    row.appendChild(readonlyChip(String(value)));
+    row.appendChild(readonlyChip(String(initial)));
     return row;
   }
 
   switch (typeName) {
     case "ZodString":
-      row.appendChild(textInput(value as string | undefined, onChange));
+      row.appendChild(textInput(initial as string | undefined, onChange));
       break;
     case "ZodNumber":
-      row.appendChild(numberInput(key, base as z.ZodNumber, value as number | undefined, onChange));
+      row.appendChild(numberInput(key, base as z.ZodNumber, initial as number | undefined, onChange));
       break;
     case "ZodBoolean":
-      row.appendChild(checkboxInput(value as boolean | undefined, onChange));
+      row.appendChild(checkboxInput(initial as boolean | undefined, onChange));
       break;
     case "ZodEnum":
       row.appendChild(
-        enumSelect(((base as z.ZodEnum<[string, ...string[]]>)._def.values as string[]) ?? [], value as string | undefined, onChange),
+        enumSelect(((base as z.ZodEnum<[string, ...string[]]>)._def.values as string[]) ?? [], initial as string | undefined, onChange),
       );
       break;
     case "ZodLiteral":
@@ -71,16 +80,22 @@ function renderField(
     case "ZodObject": {
       const sub = document.createElement("div");
       sub.className = "pg__object";
-      const subValue = (value && typeof value === "object" ? value : {}) as Record<string, unknown>;
       const subShape = (base as z.ZodObject<z.ZodRawShape>).shape;
       for (const [subKey, subSchema] of Object.entries(subShape)) {
         const subRow = renderField(
           subKey,
           subKey,
           subSchema as z.ZodTypeAny,
-          subValue[subKey],
+          () => {
+            const cur = getCurrent();
+            return cur && typeof cur === "object"
+              ? (cur as Record<string, unknown>)[subKey]
+              : undefined;
+          },
           (newValue) => {
-            const next = { ...subValue, [subKey]: newValue };
+            const cur = getCurrent();
+            const base2 = cur && typeof cur === "object" ? (cur as Record<string, unknown>) : {};
+            const next = { ...base2, [subKey]: newValue };
             onChange(next);
           },
         );
@@ -92,15 +107,15 @@ function renderField(
       break;
     }
     case "ZodArray":
-      row.appendChild(arrayField(base as z.ZodArray<z.ZodTypeAny>, value, onChange));
+      row.appendChild(arrayField(base as z.ZodArray<z.ZodTypeAny>, getCurrent, onChange));
       break;
     case "ZodDiscriminatedUnion":
       row.appendChild(
-        discriminatedUnionField(base as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>, value, onChange),
+        discriminatedUnionField(base as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>, getCurrent, onChange),
       );
       break;
     default:
-      row.appendChild(jsonFallback(value, onChange));
+      row.appendChild(jsonFallback(initial, onChange));
       break;
   }
 
@@ -109,16 +124,22 @@ function renderField(
 
 function arrayField(
   schema: z.ZodArray<z.ZodTypeAny>,
-  value: unknown,
+  getCurrent: () => unknown,
   onChange: (next: unknown) => void,
 ): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "pg__array";
   const elementSchema = schema._def.type;
 
-  const rebuild = (current: unknown[]): void => {
+  const readArr = (): unknown[] => {
+    const v = getCurrent();
+    return Array.isArray(v) ? v : [];
+  };
+
+  const rebuild = (): void => {
     wrap.innerHTML = "";
-    current.forEach((itemValue, idx) => {
+    const items = readArr();
+    items.forEach((_itemValue, idx) => {
       const itemRow = document.createElement("div");
       itemRow.className = "pg__array-item";
       const head = document.createElement("div");
@@ -131,21 +152,29 @@ function arrayField(
       removeBtn.className = "pg__btn pg__btn--danger";
       removeBtn.textContent = "Remover";
       removeBtn.addEventListener("click", () => {
-        const next = current.slice();
-        next.splice(idx, 1);
-        rebuild(next);
-        onChange(next);
+        const arr = readArr().slice();
+        arr.splice(idx, 1);
+        onChange(arr);
+        rebuild();
       });
       head.appendChild(title);
       head.appendChild(removeBtn);
       itemRow.appendChild(head);
 
-      const itemBody = renderField(`item_${idx}`, "", elementSchema, itemValue, (next) => {
-        const updated = current.slice();
-        updated[idx] = next;
-        // Edits inside the item don't change array length; no local rebuild.
-        onChange(updated);
-      });
+      const itemBody = renderField(
+        `item_${idx}`,
+        "",
+        elementSchema,
+        () => {
+          const arr = readArr();
+          return arr[idx];
+        },
+        (next) => {
+          const arr = readArr().slice();
+          arr[idx] = next;
+          onChange(arr);
+        },
+      );
       const itemLabel = itemBody.querySelector(".pg__label");
       if (itemLabel) itemLabel.remove();
       itemRow.appendChild(itemBody);
@@ -157,21 +186,21 @@ function arrayField(
     addBtn.className = "pg__btn";
     addBtn.textContent = "+ Adicionar";
     addBtn.addEventListener("click", () => {
-      const next = current.slice();
-      next.push(makeDefault(elementSchema));
-      rebuild(next);
-      onChange(next);
+      const arr = readArr().slice();
+      arr.push(makeDefault(elementSchema));
+      onChange(arr);
+      rebuild();
     });
     wrap.appendChild(addBtn);
   };
 
-  rebuild(Array.isArray(value) ? [...value] : []);
+  rebuild();
   return wrap;
 }
 
 function discriminatedUnionField(
   schema: z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>,
-  value: unknown,
+  getCurrent: () => unknown,
   onChange: (next: unknown) => void,
 ): HTMLElement {
   const wrap = document.createElement("div");
@@ -185,12 +214,17 @@ function discriminatedUnionField(
       : "?";
   });
 
-  const rebuild = (current: unknown): void => {
+  const readTag = (): string => {
+    const cur = getCurrent();
+    if (cur && typeof cur === "object" && discriminator in (cur as Record<string, unknown>)) {
+      return String((cur as Record<string, unknown>)[discriminator]);
+    }
+    return optionLabels[0] ?? "";
+  };
+
+  const rebuild = (): void => {
     wrap.innerHTML = "";
-    const currentTag =
-      current && typeof current === "object" && discriminator in (current as Record<string, unknown>)
-        ? String((current as Record<string, unknown>)[discriminator])
-        : (optionLabels[0] ?? "");
+    const currentTag = readTag();
 
     const typeRow = document.createElement("div");
     typeRow.className = "pg__row";
@@ -202,68 +236,112 @@ function discriminatedUnionField(
       const newOption = options[optionLabels.indexOf(newTag)];
       if (!newOption) return;
       const fresh = makeDefault(newOption);
-      rebuild(fresh);
       onChange(fresh);
+      rebuild();
     });
     typeRow.appendChild(sel);
     wrap.appendChild(typeRow);
 
     const activeOption = options[optionLabels.indexOf(currentTag)];
     if (!activeOption) return;
-    const activeValue = (current && typeof current === "object" ? current : {}) as Record<string, unknown>;
     for (const [subKey, subSchema] of Object.entries(activeOption.shape)) {
       if (subKey === discriminator) continue;
-      const subRow = renderField(subKey, subKey, subSchema as z.ZodTypeAny, activeValue[subKey], (newValue) => {
-        const next = { ...activeValue, [subKey]: newValue };
-        // Field edit inside the chosen variant — no local rebuild.
-        onChange(next);
-      });
+      const subRow = renderField(
+        subKey,
+        subKey,
+        subSchema as z.ZodTypeAny,
+        () => {
+          const cur = getCurrent();
+          return cur && typeof cur === "object"
+            ? (cur as Record<string, unknown>)[subKey]
+            : undefined;
+        },
+        (newValue) => {
+          const cur = getCurrent();
+          const base2 = cur && typeof cur === "object" ? (cur as Record<string, unknown>) : {};
+          const next = { ...base2, [subKey]: newValue };
+          onChange(next);
+        },
+      );
       wrap.appendChild(subRow);
     }
   };
 
-  rebuild(value);
+  rebuild();
   return wrap;
 }
 
 function makeDefault(schema: z.ZodTypeAny): unknown {
-  // First, try Zod's own default machinery. For schemas built mostly from .default()
-  // and discriminated unions, parsing an empty object yields a fully valid value.
   const inner = unwrap(schema);
   const tn = inner._def.typeName as string;
-  try {
-    if (tn === "ZodObject") {
-      const obj = inner as z.ZodObject<z.ZodRawShape>;
-      const seed: Record<string, unknown> = {};
-      for (const [k, s] of Object.entries(obj.shape)) {
-        const sUnwrapped = unwrap(s as z.ZodTypeAny);
-        const stn = sUnwrapped._def.typeName as string;
-        if (stn === "ZodLiteral") {
-          seed[k] = (sUnwrapped as z.ZodLiteral<unknown>)._def.value;
-        }
-      }
-      return obj.parse(seed);
+  // Optional/nullable wrappers: caller can leave the value as undefined,
+  // but for array elements / discriminator switches we want a concrete object.
+  if (tn === "ZodObject") {
+    const obj = inner as z.ZodObject<z.ZodRawShape>;
+    const out: Record<string, unknown> = {};
+    for (const [k, s] of Object.entries(obj.shape)) {
+      const child = makeDefault(s as z.ZodTypeAny);
+      if (child !== undefined) out[k] = child;
     }
-    if (tn === "ZodDiscriminatedUnion") {
-      const du = inner as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>;
-      const first = du._def.options[0];
-      if (first) return makeDefault(first);
-    }
-  } catch {
-    // fall through
+    return out;
   }
+  if (tn === "ZodDiscriminatedUnion") {
+    const du = inner as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>;
+    const first = du._def.options[0];
+    if (first) return makeDefault(first);
+  }
+  if (tn === "ZodLiteral") {
+    return (inner as z.ZodLiteral<unknown>)._def.value;
+  }
+  if (tn === "ZodDefault") {
+    // unwrap() above strips ZodDefault; we only land here if it's a leaf default.
+    return (schema._def as { defaultValue: () => unknown }).defaultValue?.();
+  }
+  // For wrapped types where the *outer* is ZodOptional we already unwrapped.
+  // Pull a default if Zod attached one anywhere up the chain.
+  const def = extractDefault(schema);
+  if (def !== undefined) return def;
   switch (tn) {
-    case "ZodNumber":
+    case "ZodNumber": {
+      const num = inner as z.ZodNumber;
+      const c = numberConstraints(num);
+      // Pick a value that satisfies positive/min constraints when present.
+      if (c.min !== undefined) return c.min > 0 ? c.min : 1;
+      // PositiveNumber has a "min" check kind under the hood, but in case it's
+      // a "positive" check, fall back to 1.
+      const checks = (num._def as { checks?: { kind: string }[] }).checks ?? [];
+      if (checks.some((ck) => ck.kind === "positive")) return 1;
       return 0;
+    }
     case "ZodString":
       return "";
     case "ZodBoolean":
       return false;
     case "ZodArray":
       return [];
+    case "ZodOptional":
+      return undefined;
     default:
-      return null;
+      return undefined;
   }
+}
+
+function extractDefault(schema: z.ZodTypeAny): unknown {
+  let cur: z.ZodTypeAny | undefined = schema;
+  const seen = new Set<unknown>();
+  while (cur && !seen.has(cur)) {
+    seen.add(cur);
+    const tn = cur._def?.typeName as string | undefined;
+    if (tn === "ZodDefault") {
+      return (cur._def as { defaultValue: () => unknown }).defaultValue();
+    }
+    if (tn === "ZodOptional" || tn === "ZodNullable") {
+      cur = (cur._def as { innerType: z.ZodTypeAny }).innerType;
+      continue;
+    }
+    break;
+  }
+  return undefined;
 }
 
 function unwrap(schema: z.ZodTypeAny): z.ZodTypeAny {

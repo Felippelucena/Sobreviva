@@ -5,66 +5,97 @@
       "kind": "weapon",
       "id": "spark",
       "name": "Spark",
-      "damage": 18,
       "cooldownMs": 600,
-      "projectile": {
-        "speed": 360,
-        "radius": 5,
-        "lifetimeMs": 900,
-        "pierce": 0,
-        "color": 16766822
-      }
-    },
-    {
-      "kind": "weapon",
-      "id": "hammer",
-      "name": "Hammer",
-      "damage": 42,
-      "cooldownMs": 1100,
-      "projectile": {
-        "speed": 240,
-        "radius": 10,
-        "lifetimeMs": 650,
-        "pierce": 1,
-        "color": 15967243
-      }
-    },
-    {
-      "kind": "weapon",
-      "id": "needle",
-      "name": "Needle",
-      "damage": 8,
-      "cooldownMs": 220,
-      "projectile": {
-        "speed": 500,
-        "radius": 3,
-        "lifetimeMs": 700,
-        "pierce": 0,
-        "color": 10079487
-      }
-    },
-    {
-      "kind": "weapon",
-      "id": "shotgun",
-      "name": "Bacamarte",
-      "damage": 7,
-      "cooldownMs": 950,
-      "projectile": {
-        "speed": 420,
-        "radius": 4,
-        "lifetimeMs": 480,
-        "pierce": 0,
-        "color": 16751052
-      },
       "burst": {
         "volleyCount": 1,
         "volleyIntervalMs": 0,
         "volleys": [
           {
             "shots": [
-              { "type": "projectile", "angleOffsetDeg": -15 },
-              { "type": "projectile", "angleOffsetDeg": 0 },
-              { "type": "projectile", "angleOffsetDeg": 15 }
+              {
+                "type": "projectile",
+                "angleOffsetDeg": 0,
+                "damage": 18,
+                "projectile": { "speed": 360, "radius": 5, "lifetimeMs": 900, "pierce": 0, "color": 16766822 }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "weapon",
+      "id": "hammer",
+      "name": "Hammer",
+      "cooldownMs": 1100,
+      "burst": {
+        "volleyCount": 1,
+        "volleyIntervalMs": 0,
+        "volleys": [
+          {
+            "shots": [
+              {
+                "type": "projectile",
+                "angleOffsetDeg": 0,
+                "damage": 42,
+                "projectile": { "speed": 240, "radius": 10, "lifetimeMs": 650, "pierce": 1, "color": 15967243 }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "weapon",
+      "id": "needle",
+      "name": "Needle",
+      "cooldownMs": 220,
+      "burst": {
+        "volleyCount": 1,
+        "volleyIntervalMs": 0,
+        "volleys": [
+          {
+            "shots": [
+              {
+                "type": "projectile",
+                "angleOffsetDeg": 0,
+                "damage": 8,
+                "projectile": { "speed": 500, "radius": 3, "lifetimeMs": 700, "pierce": 0, "color": 10079487 }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "weapon",
+      "id": "shotgun",
+      "name": "Bacamarte",
+      "cooldownMs": 950,
+      "burst": {
+        "volleyCount": 1,
+        "volleyIntervalMs": 0,
+        "volleys": [
+          {
+            "shots": [
+              {
+                "type": "projectile",
+                "angleOffsetDeg": -15,
+                "damage": 7,
+                "projectile": { "speed": 420, "radius": 4, "lifetimeMs": 480, "pierce": 0, "color": 16751052 }
+              },
+              {
+                "type": "projectile",
+                "angleOffsetDeg": 0,
+                "damage": 7,
+                "projectile": { "speed": 420, "radius": 4, "lifetimeMs": 480, "pierce": 0, "color": 16751052 }
+              },
+              {
+                "type": "projectile",
+                "angleOffsetDeg": 15,
+                "damage": 7,
+                "projectile": { "speed": 420, "radius": 4, "lifetimeMs": 480, "pierce": 0, "color": 16751052 }
+              }
             ]
           }
         ]
@@ -74,40 +105,42 @@
       "kind": "weapon",
       "id": "smg",
       "name": "Metralha",
-      "damage": 4,
       "cooldownMs": 950,
-      "projectile": {
-        "speed": 520,
-        "radius": 3,
-        "lifetimeMs": 600,
-        "pierce": 0,
-        "color": 7405567
-      },
       "burst": {
         "volleyCount": 6,
-        "volleyIntervalMs": 50
+        "volleyIntervalMs": 50,
+        "volleys": [
+          {
+            "shots": [
+              {
+                "type": "projectile",
+                "angleOffsetDeg": 0,
+                "damage": 4,
+                "projectile": { "speed": 520, "radius": 3, "lifetimeMs": 600, "pierce": 0, "color": 7405567 }
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "kind": "weapon",
       "id": "nova",
       "name": "Nova",
-      "damage": 22,
       "cooldownMs": 1400,
-      "projectile": {
-        "speed": 1,
-        "radius": 1,
-        "lifetimeMs": 1,
-        "pierce": 0,
-        "color": 16751052
-      },
       "burst": {
         "volleyCount": 1,
         "volleyIntervalMs": 0,
         "volleys": [
           {
             "shots": [
-              { "type": "area", "radius": 90, "color": 16751052, "lifetimeMs": 180 }
+              {
+                "type": "area",
+                "damage": 22,
+                "radius": 90,
+                "color": 16751052,
+                "lifetimeMs": 180
+              }
             ]
           }
         ]

@@ -17,7 +17,6 @@ import {
 } from "../components";
 import { weaponStateFromDef } from "../factories";
 
-// Minimal renderer stub. Pixi Graphics constructs in node fine, only display matters.
 function fakeRenderer() {
   const world = new Container();
   return { world } as unknown as import("../../engine/Renderer").Renderer;
@@ -55,6 +54,37 @@ function countAoe(world: World): number {
   return n;
 }
 
+function straightWeapon(opts: { id?: string; cooldownMs?: number; damage?: number; projectile?: Partial<{ speed: number; radius: number; lifetimeMs: number; pierce: number; color: number }> } = {}): WeaponDef {
+  return WeaponDef.parse({
+    kind: "weapon",
+    id: opts.id ?? "test",
+    name: "Test",
+    cooldownMs: opts.cooldownMs ?? 600,
+    burst: {
+      volleyCount: 1,
+      volleyIntervalMs: 0,
+      volleys: [
+        {
+          shots: [
+            {
+              type: "projectile",
+              angleOffsetDeg: 0,
+              damage: opts.damage ?? 10,
+              projectile: {
+                speed: opts.projectile?.speed ?? 360,
+                radius: opts.projectile?.radius ?? 4,
+                lifetimeMs: opts.projectile?.lifetimeMs ?? 800,
+                ...(opts.projectile?.pierce !== undefined ? { pierce: opts.projectile.pierce } : {}),
+                ...(opts.projectile?.color !== undefined ? { color: opts.projectile.color } : {}),
+              },
+            },
+          ],
+        },
+      ],
+    },
+  });
+}
+
 describe("WeaponSystem", () => {
   let world: World;
   let renderer: ReturnType<typeof fakeRenderer>;
@@ -66,68 +96,62 @@ describe("WeaponSystem", () => {
     bus = new EventBus();
   });
 
-  it("legacy weapon (no burst) fires once per cooldown", () => {
-    const weapon = WeaponDef.parse({
-      kind: "weapon",
-      id: "spark",
-      name: "Spark",
-      damage: 10,
-      cooldownMs: 600,
-      projectile: { speed: 360, radius: 4, lifetimeMs: 800 },
-    });
+  it("straight weapon fires once per cooldown", () => {
+    const weapon = straightWeapon({ id: "spark", cooldownMs: 600 });
     buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
 
     weaponSystem(world, renderer, bus, TICK_DT);
     expect(countProjectiles(world)).toBe(1);
 
-    // Within cooldown — no new projectiles.
     for (let i = 0; i < 30; i++) weaponSystem(world, renderer, bus, TICK_DT);
     expect(countProjectiles(world)).toBe(1);
 
-    // After cooldown — one more projectile.
     for (let i = 0; i < 40; i++) weaponSystem(world, renderer, bus, TICK_DT);
     expect(countProjectiles(world)).toBe(2);
   });
 
-  it("low cooldown without burst still fires at most once per tick", () => {
-    const weapon = WeaponDef.parse({
-      kind: "weapon",
-      id: "fast",
-      name: "Fast",
-      damage: 1,
-      cooldownMs: 5,
-      projectile: { speed: 300, radius: 3, lifetimeMs: 200 },
-    });
+  it("low cooldown still fires at most once per tick (60Hz floor without burst)", () => {
+    const weapon = straightWeapon({ id: "fast", cooldownMs: 5 });
     buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
 
     for (let i = 0; i < 10; i++) weaponSystem(world, renderer, bus, TICK_DT);
-    // 10 ticks → up to 10 projectiles. Critical: NOT more than 10.
     expect(countProjectiles(world)).toBeLessThanOrEqual(10);
     expect(countProjectiles(world)).toBeGreaterThanOrEqual(8);
   });
 
-  it("burst with 6 volleys × 50ms enqueues all and fires within 250ms", () => {
+  it("burst with 6 reps × 50ms interval enqueues 6 volleys and fires within 250ms", () => {
     const weapon = WeaponDef.parse({
       kind: "weapon",
       id: "smg",
       name: "SMG",
-      damage: 4,
       cooldownMs: 1000,
-      projectile: { speed: 500, radius: 3, lifetimeMs: 600 },
-      burst: { volleyCount: 6, volleyIntervalMs: 50 },
+      burst: {
+        volleyCount: 6,
+        volleyIntervalMs: 50,
+        volleys: [
+          {
+            shots: [
+              {
+                type: "projectile",
+                angleOffsetDeg: 0,
+                damage: 4,
+                projectile: { speed: 500, radius: 3, lifetimeMs: 600 },
+              },
+            ],
+          },
+        ],
+      },
     });
     const playerId = buildPlayer(world, weapon);
     buildEnemy(world, 200, 0);
 
     weaponSystem(world, renderer, bus, TICK_DT);
-    // First tick fires volley 0 (atMs = clockMs = 16.66).
     expect(countProjectiles(world)).toBe(1);
     const ws = world.get(playerId, WeaponState)!;
     expect(ws.pendingVolleys.length).toBe(5);
 
-    // Advance ~250ms total → all 6 volleys should have fired.
     for (let i = 0; i < 16; i++) weaponSystem(world, renderer, bus, TICK_DT);
     expect(countProjectiles(world)).toBe(6);
     expect(ws.pendingVolleys.length).toBe(0);
@@ -138,18 +162,18 @@ describe("WeaponSystem", () => {
       kind: "weapon",
       id: "shotgun",
       name: "Shotgun",
-      damage: 8,
       cooldownMs: 1000,
-      projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
       burst: {
         volleyCount: 1,
+        volleyIntervalMs: 0,
         volleys: [
           {
-            shots: [
-              { type: "projectile", angleOffsetDeg: -15 },
-              { type: "projectile", angleOffsetDeg: 0 },
-              { type: "projectile", angleOffsetDeg: 15 },
-            ],
+            shots: [-15, 0, 15].map((a) => ({
+              type: "projectile" as const,
+              angleOffsetDeg: a,
+              damage: 8,
+              projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
+            })),
           },
         ],
       },
@@ -175,12 +199,11 @@ describe("WeaponSystem", () => {
       kind: "weapon",
       id: "nova",
       name: "Nova",
-      damage: 12,
       cooldownMs: 1500,
-      projectile: { speed: 1, radius: 1, lifetimeMs: 1 },
       burst: {
         volleyCount: 1,
-        volleys: [{ shots: [{ type: "area", radius: 80 }] }],
+        volleyIntervalMs: 0,
+        volleys: [{ shots: [{ type: "area", damage: 22, radius: 80 }] }],
       },
     });
     buildPlayer(world, weapon);
@@ -196,18 +219,18 @@ describe("WeaponSystem", () => {
       kind: "weapon",
       id: "shotgun",
       name: "Shotgun",
-      damage: 8,
       cooldownMs: 1000,
-      projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
       burst: {
         volleyCount: 1,
+        volleyIntervalMs: 0,
         volleys: [
           {
-            shots: [
-              { type: "projectile", angleOffsetDeg: -15 },
-              { type: "projectile", angleOffsetDeg: 0 },
-              { type: "projectile", angleOffsetDeg: 15 },
-            ],
+            shots: [-15, 0, 15].map((a) => ({
+              type: "projectile" as const,
+              angleOffsetDeg: a,
+              damage: 8,
+              projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
+            })),
           },
         ],
       },
