@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Browser game ("Sobreviva" / "Correril") in the Vampire Survivors vein, built as a portfolio piece with an in-game editor and a mod pipeline. Stack: **TypeScript + Vite + PixiJS v8 + Zod + Vitest**. User-facing strings are pt-BR; code identifiers and comments are English. See `ROADMAP.md` for milestone planning (M1–M8) — treat it as authoritative for scope decisions.
+Browser game ("Sobreviva") in the Vampire Survivors vein, built as a portfolio piece with an in-game editor and a mod pipeline. Stack: **TypeScript + Vite + PixiJS v8 + Zod + Vitest**. User-facing strings are pt-BR; code identifiers and comments are English. See `ROADMAP.md` for milestone planning (M1–M8) — treat it as authoritative for scope decisions.
 
 ## Commands
 
@@ -55,11 +55,11 @@ Two-layer: JSON packs (always safe) and optional JS scripts (consent-gated).
 
 ### Editor (`src/editor/`)
 
-`Editor` mirrors the pack structure with tabs per kind. `PropertyGrid.ts` auto-generates a form from the Zod schema for that kind. `LivePreview.ts` instantiates a `Renderer` with a minimal sim (dummy enemy + edited weapon) so stat tweaks are visible immediately. Export writes a `.correrilpack.json` bundle via `content/bundle.ts`.
+`Editor` mirrors the pack structure with tabs per kind. `PropertyGrid.ts` auto-generates a form from the Zod schema for that kind. `LivePreview.ts` instantiates a `Renderer` with a minimal sim (dummy enemy + edited weapon) so stat tweaks are visible immediately. Export writes a `.sobrevivapack.json` bundle via `content/bundle.ts`.
 
 ### Persistence (`src/persistence/`)
 
-All localStorage keys are centralized in `Keys.ts` and are versioned (`correril.meta.v1`, etc.). `SaveStore` is a thin typed wrapper. `MetaManager` handles unlock rules and run history.
+All localStorage keys are centralized in `Keys.ts` and are versioned (`sobreviva.meta.v1`, etc.). `SaveStore` is a thin typed wrapper. `MetaManager` handles unlock rules and run history.
 
 ## Conventions worth knowing
 

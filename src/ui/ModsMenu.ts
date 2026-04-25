@@ -4,12 +4,12 @@ import type { ModManager, StoredMod } from "../mods/ModManager";
 
 const EXAMPLE_PACKS: readonly { url: string; label: string; note: string }[] = [
   {
-    url: "./packs/examples/rapid-fire.correrilpack.json",
+    url: "./packs/examples/rapid-fire.sobrevivapack.json",
     label: "Rapid Fire",
     note: "JSON-only — spark mais rápido",
   },
   {
-    url: "./packs/examples/xp-burst.correrilpack.json",
+    url: "./packs/examples/xp-burst.sobrevivapack.json",
     label: "XP Burst",
     note: "JS — cada morte dropa XP extra",
   },
@@ -48,7 +48,7 @@ export class ModsMenu {
           <div class="mods__section-title" style="margin-top:0">Importar</div>
           <input type="file" accept=".json,application/json" class="mods__file" />
           <div class="mods__import-row">
-            <input type="text" class="mods__url" placeholder="https://... (URL de um .correrilpack.json)" />
+            <input type="text" class="mods__url" placeholder="https://... (URL de um .sobrevivapack.json)" />
             <button class="menu__btn" data-action="import-url">Carregar URL</button>
           </div>
           <div class="mods__error" style="display:none"></div>

@@ -1,4 +1,4 @@
-# Correril — Roadmap
+# SOBREVIVA — Roadmap
 
 Jogo estilo Vampire Survivors, open source, jogável em navegador, com editor in-game e suporte a mods. Portfólio de desenvolvimento web. Stack: **TypeScript + Vite + PixiJS v8 + Zod**.
 
