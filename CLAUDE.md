@@ -69,3 +69,25 @@ All localStorage keys are centralized in `Keys.ts` and are versioned (`sobreviva
 - When adding a new event, extend `GameEvents` in `EventBus.ts` and also add the entry to the `handlers` initializer object (the code relies on every key existing).
 - When adding a new def kind, you must touch: schema file in `src/content/schema/`, the discriminated `AnyDef` union, `DefByKind` in `ContentRegistry.ts`, and the editor tabs list in `src/editor/Editor.ts`.
 - Pixi v8 API (not v7): use `new Graphics().circle(...).fill(...)`, not `.beginFill/.drawCircle/.endFill`.
+
+## AI workflow
+
+This project uses Claude Code with specialized agents, skills and path-scoped rules. Full plan: `docs/AI_WORKFLOW.md`.
+
+- **Agents** (`.claude/agents/`): `architect-reviewer`, `mod-security-reviewer`, `schema-guardian`, `content-engineer`, `code-reviewer`, `qa-engineer`, `performance-analyst`, `coherence-auditor`, `refactor-coordinator`. Auto-disparam pela descrição ou são invocáveis manualmente.
+- **Skills** (`.claude/skills/`): `/new-weapon`, `/new-enemy`, `/new-pickup`, `/new-wave`, `/add-component`, `/add-event`, `/pr-checklist`, `/milestone-status`, `/refactor-content-shape`. Procedimentos repetíveis que sempre leem o schema antes de gerar (resilientes a evolução).
+- **Path-scoped rules** (`.claude/rules/`): descrevem **invariantes** (não a forma atual de cada def). Cobrem ECS, content pipeline, mod boundary, editor e Pixi v8.
+- **Testes de coerência** (`src/content/__tests__/coherence.test.ts`, `src/content/__tests__/packs-valid.test.ts`): rodam em todo `npm test`. Detectam drift entre schema, packs JSON, editor, e components — falham em CI antes de merge.
+
+### Pontos onde humano sempre confirma antes de executar
+- Push para `main`, criação de tag, release.
+- Mudança em `src/content/MergePolicy.ts` ou no freeze recursivo de `ContentRegistry`.
+- Mudança em `src/mods/JsRuntime.ts` ou no contrato `ModApi`.
+- Bump de `schemaVersion` em qualquer Zod schema.
+- Modificação da ordem de sistemas em `Game.update`.
+
+### Quando escalar para agentes especializados
+- Tocou `src/mods/` ou `EventBus.ts` (quarentena) → invocar `mod-security-reviewer` (não opcional).
+- Tocou `MergePolicy.ts`, `ContentRegistry.ts` ou ordem de systems → invocar `architect-reviewer`.
+- Adicionou def kind ou alterou schema Zod → invocar `schema-guardian`.
+- Tocou hot path (Loop, queries, SpatialGrid, render) com risco de regressão → invocar `performance-analyst`.
