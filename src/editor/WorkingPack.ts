@@ -207,6 +207,7 @@ export function blankMap(id: string, waveId: string): MapDef {
     backgroundColor: 0x0e1118,
     spawnRingMin: 380,
     spawnRingMax: 560,
+    unlock: { kind: "always" },
   };
 }
 

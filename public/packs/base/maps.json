@@ -8,7 +8,28 @@
       "waveId": "default",
       "backgroundColor": 921880,
       "spawnRingMin": 380,
-      "spawnRingMax": 560
+      "spawnRingMax": 560,
+      "unlock": { "kind": "always" }
+    },
+    {
+      "kind": "map",
+      "id": "ruins",
+      "name": "Ruínas",
+      "waveId": "default",
+      "backgroundColor": 2236962,
+      "spawnRingMin": 340,
+      "spawnRingMax": 520,
+      "unlock": { "kind": "kills", "count": 100 }
+    },
+    {
+      "kind": "map",
+      "id": "abyss",
+      "name": "Abismo",
+      "waveId": "default",
+      "backgroundColor": 524296,
+      "spawnRingMin": 300,
+      "spawnRingMax": 480,
+      "unlock": { "kind": "time", "ms": 180000 }
     }
   ]
 }
