@@ -92,7 +92,12 @@ function renderField(
       break;
     }
     case "ZodArray":
-      row.appendChild(jsonFallback(value, onChange));
+      row.appendChild(arrayField(base as z.ZodArray<z.ZodTypeAny>, value, onChange));
+      break;
+    case "ZodDiscriminatedUnion":
+      row.appendChild(
+        discriminatedUnionField(base as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>, value, onChange),
+      );
       break;
     default:
       row.appendChild(jsonFallback(value, onChange));
@@ -100,6 +105,165 @@ function renderField(
   }
 
   return row;
+}
+
+function arrayField(
+  schema: z.ZodArray<z.ZodTypeAny>,
+  value: unknown,
+  onChange: (next: unknown) => void,
+): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.className = "pg__array";
+  const elementSchema = schema._def.type;
+
+  const rebuild = (current: unknown[]): void => {
+    wrap.innerHTML = "";
+    current.forEach((itemValue, idx) => {
+      const itemRow = document.createElement("div");
+      itemRow.className = "pg__array-item";
+      const head = document.createElement("div");
+      head.className = "pg__array-item-head";
+      const title = document.createElement("span");
+      title.className = "pg__array-item-title";
+      title.textContent = `#${idx + 1}`;
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "pg__btn pg__btn--danger";
+      removeBtn.textContent = "Remover";
+      removeBtn.addEventListener("click", () => {
+        const next = current.slice();
+        next.splice(idx, 1);
+        rebuild(next);
+        onChange(next);
+      });
+      head.appendChild(title);
+      head.appendChild(removeBtn);
+      itemRow.appendChild(head);
+
+      const itemBody = renderField(`item_${idx}`, "", elementSchema, itemValue, (next) => {
+        const updated = current.slice();
+        updated[idx] = next;
+        // Edits inside the item don't change array length; no local rebuild.
+        onChange(updated);
+      });
+      const itemLabel = itemBody.querySelector(".pg__label");
+      if (itemLabel) itemLabel.remove();
+      itemRow.appendChild(itemBody);
+      wrap.appendChild(itemRow);
+    });
+
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "pg__btn";
+    addBtn.textContent = "+ Adicionar";
+    addBtn.addEventListener("click", () => {
+      const next = current.slice();
+      next.push(makeDefault(elementSchema));
+      rebuild(next);
+      onChange(next);
+    });
+    wrap.appendChild(addBtn);
+  };
+
+  rebuild(Array.isArray(value) ? [...value] : []);
+  return wrap;
+}
+
+function discriminatedUnionField(
+  schema: z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>,
+  value: unknown,
+  onChange: (next: unknown) => void,
+): HTMLElement {
+  const wrap = document.createElement("div");
+  wrap.className = "pg__object";
+  const discriminator = schema._def.discriminator;
+  const options = schema._def.options as z.ZodObject<z.ZodRawShape>[];
+  const optionLabels = options.map((opt) => {
+    const tagSchema = opt.shape[discriminator] as z.ZodTypeAny | undefined;
+    return tagSchema && (tagSchema as z.ZodLiteral<unknown>)._def?.value !== undefined
+      ? String((tagSchema as z.ZodLiteral<unknown>)._def.value)
+      : "?";
+  });
+
+  const rebuild = (current: unknown): void => {
+    wrap.innerHTML = "";
+    const currentTag =
+      current && typeof current === "object" && discriminator in (current as Record<string, unknown>)
+        ? String((current as Record<string, unknown>)[discriminator])
+        : (optionLabels[0] ?? "");
+
+    const typeRow = document.createElement("div");
+    typeRow.className = "pg__row";
+    const typeLabel = document.createElement("label");
+    typeLabel.className = "pg__label";
+    typeLabel.textContent = discriminator;
+    typeRow.appendChild(typeLabel);
+    const sel = enumSelect(optionLabels, currentTag, (newTag) => {
+      const newOption = options[optionLabels.indexOf(newTag)];
+      if (!newOption) return;
+      const fresh = makeDefault(newOption);
+      rebuild(fresh);
+      onChange(fresh);
+    });
+    typeRow.appendChild(sel);
+    wrap.appendChild(typeRow);
+
+    const activeOption = options[optionLabels.indexOf(currentTag)];
+    if (!activeOption) return;
+    const activeValue = (current && typeof current === "object" ? current : {}) as Record<string, unknown>;
+    for (const [subKey, subSchema] of Object.entries(activeOption.shape)) {
+      if (subKey === discriminator) continue;
+      const subRow = renderField(subKey, subKey, subSchema as z.ZodTypeAny, activeValue[subKey], (newValue) => {
+        const next = { ...activeValue, [subKey]: newValue };
+        // Field edit inside the chosen variant — no local rebuild.
+        onChange(next);
+      });
+      wrap.appendChild(subRow);
+    }
+  };
+
+  rebuild(value);
+  return wrap;
+}
+
+function makeDefault(schema: z.ZodTypeAny): unknown {
+  // First, try Zod's own default machinery. For schemas built mostly from .default()
+  // and discriminated unions, parsing an empty object yields a fully valid value.
+  const inner = unwrap(schema);
+  const tn = inner._def.typeName as string;
+  try {
+    if (tn === "ZodObject") {
+      const obj = inner as z.ZodObject<z.ZodRawShape>;
+      const seed: Record<string, unknown> = {};
+      for (const [k, s] of Object.entries(obj.shape)) {
+        const sUnwrapped = unwrap(s as z.ZodTypeAny);
+        const stn = sUnwrapped._def.typeName as string;
+        if (stn === "ZodLiteral") {
+          seed[k] = (sUnwrapped as z.ZodLiteral<unknown>)._def.value;
+        }
+      }
+      return obj.parse(seed);
+    }
+    if (tn === "ZodDiscriminatedUnion") {
+      const du = inner as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>;
+      const first = du._def.options[0];
+      if (first) return makeDefault(first);
+    }
+  } catch {
+    // fall through
+  }
+  switch (tn) {
+    case "ZodNumber":
+      return 0;
+    case "ZodString":
+      return "";
+    case "ZodBoolean":
+      return false;
+    case "ZodArray":
+      return [];
+    default:
+      return null;
+  }
 }
 
 function unwrap(schema: z.ZodTypeAny): z.ZodTypeAny {

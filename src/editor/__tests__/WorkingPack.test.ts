@@ -84,9 +84,9 @@ describe("WorkingPack", () => {
   it("autosaves to the store after debounce", () => {
     const wp = new WorkingPack(store);
     wp.upsert(blankWeapon("spark"));
-    expect(storage.getItem("correril.editor.draft.v1")).toBeNull();
+    expect(storage.getItem("sobreviva.editor.draft.v1")).toBeNull();
     vi.runAllTimers();
-    expect(storage.getItem("correril.editor.draft.v1")).not.toBeNull();
+    expect(storage.getItem("sobreviva.editor.draft.v1")).not.toBeNull();
     const reloaded = new WorkingPack(new SaveStore(storage));
     expect(reloaded.list("weapon").map((w) => w.id)).toEqual(["spark"]);
   });

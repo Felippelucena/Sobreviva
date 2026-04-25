@@ -53,6 +53,7 @@ export class Editor {
   private currentKind: Kind = "weapon";
   private currentId: string | null = null;
   private unsubscribe: (() => void) | null = null;
+  private suppressFormRerender = false;
 
   constructor(
     private readonly host: HTMLElement,
@@ -67,7 +68,7 @@ export class Editor {
     await this.preview.init();
     this.unsubscribe = this.working.subscribe(() => {
       this.renderList();
-      this.renderForm();
+      if (!this.suppressFormRerender) this.renderForm();
       this.updatePreview();
     });
     this.selectFirstOrCreate();
@@ -312,11 +313,14 @@ export class Editor {
   }
 
   private patchDef(next: AnyDef): void {
+    this.suppressFormRerender = true;
     try {
       this.working.upsert(next);
       this.currentId = next.id;
     } catch (e) {
       this.showError(e);
+    } finally {
+      this.suppressFormRerender = false;
     }
   }
 

@@ -8,7 +8,9 @@ import type {
   PickupDef,
   WeaponDef,
 } from "../content/schema";
+import type { WeaponShot } from "../content/schema/weapon";
 import {
+  AreaDamage,
   ContactDamage,
   EnemyAI,
   EnemySource,
@@ -29,6 +31,7 @@ import {
   Velocity,
   WeaponState,
   XpDrop,
+  type WeaponBurstConfig,
 } from "./components";
 import { xpForLevel } from "./progression/levels";
 
@@ -77,6 +80,25 @@ export function weaponStateFromDef(weapon: WeaponDef): WeaponState {
     projectileRadius: weapon.projectile.radius,
     projectileColor: weapon.projectile.color,
     pierce: weapon.projectile.pierce,
+    burst: burstConfigFromDef(weapon),
+    clockMs: 0,
+    pendingVolleys: [],
+  };
+}
+
+const DEFAULT_STRAIGHT_VOLLEY: { shots: readonly WeaponShot[] } = {
+  shots: [{ type: "projectile", angleOffsetDeg: 0, damageMultiplier: 1, speedMultiplier: 1 }],
+};
+
+function burstConfigFromDef(weapon: WeaponDef): WeaponBurstConfig {
+  const burst = weapon.burst;
+  if (!burst) {
+    return { volleyCount: 1, volleyIntervalMs: 0, volleys: [DEFAULT_STRAIGHT_VOLLEY] };
+  }
+  return {
+    volleyCount: burst.volleyCount,
+    volleyIntervalMs: burst.volleyIntervalMs,
+    volleys: burst.volleys ?? null,
   };
 }
 
@@ -133,6 +155,112 @@ export function spawnProjectile(
     ownerId: owner,
     radius: state.projectileRadius,
     hit: new Set(),
+  });
+  return id;
+}
+
+export function spawnShot(
+  world: World,
+  renderer: Renderer,
+  owner: EntityId,
+  originX: number,
+  originY: number,
+  aimX: number,
+  aimY: number,
+  shot: WeaponShot,
+  state: WeaponState,
+): EntityId {
+  if (shot.type === "projectile") {
+    const angle = Math.atan2(aimY, aimX) + (shot.angleOffsetDeg * Math.PI) / 180;
+    const baseSpeed = shot.projectile?.speed ?? state.projectileSpeed;
+    const speed = baseSpeed * shot.speedMultiplier;
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    return spawnProjectileLowLevel(world, renderer, owner, originX, originY, vx, vy, {
+      damage: state.damage * shot.damageMultiplier,
+      radius: shot.projectile?.radius ?? state.projectileRadius,
+      color: shot.projectile?.color ?? state.projectileColor,
+      lifetimeMs: shot.projectile?.lifetimeMs ?? state.projectileLifetimeMs,
+      pierce: shot.projectile?.pierce ?? state.pierce,
+    });
+  }
+  // area
+  const x = originX + shot.originOffsetX;
+  const y = originY + shot.originOffsetY;
+  return spawnAreaHit(world, renderer, owner, x, y, shot.radius, state.damage * shot.damageMultiplier, shot.lifetimeMs, shot.color);
+}
+
+interface ProjectileSpawnOpts {
+  damage: number;
+  radius: number;
+  color: number;
+  lifetimeMs: number;
+  pierce: number;
+}
+
+function spawnProjectileLowLevel(
+  world: World,
+  renderer: Renderer,
+  owner: EntityId,
+  x: number,
+  y: number,
+  vx: number,
+  vy: number,
+  opts: ProjectileSpawnOpts,
+): EntityId {
+  const id = world.createEntity();
+  const g = new Graphics().circle(0, 0, opts.radius).fill(opts.color);
+  g.position.set(x, y);
+  renderer.world.addChild(g);
+
+  world.add(id, Position, { x, y, prevX: x, prevY: y });
+  world.add(id, Velocity, { vx, vy, speed: Math.hypot(vx, vy) });
+  world.add(id, SpriteRef, { display: g });
+  world.add(id, Hitbox, { radius: opts.radius });
+  world.add(id, Lifetime, { remainingMs: opts.lifetimeMs });
+  world.add(id, ProjectileTag, true);
+  world.add(id, Projectile, {
+    damage: opts.damage,
+    pierceLeft: opts.pierce,
+    ownerId: owner,
+    radius: opts.radius,
+    hit: new Set(),
+  });
+  return id;
+}
+
+export function spawnAreaHit(
+  world: World,
+  renderer: Renderer,
+  owner: EntityId,
+  x: number,
+  y: number,
+  radius: number,
+  damage: number,
+  lifetimeMs: number,
+  color: number,
+): EntityId {
+  const id = world.createEntity();
+  const g = new Graphics().circle(0, 0, radius).fill({ color, alpha: 0.25 }).stroke({ color, width: 2, alpha: 0.7 });
+  g.position.set(x, y);
+  renderer.world.addChild(g);
+
+  const instantaneous = lifetimeMs <= 0;
+  world.add(id, Position, { x, y, prevX: x, prevY: y });
+  world.add(id, SpriteRef, { display: g });
+  world.add(id, Hitbox, { radius });
+  // Lifetime drives auto-destruction. For instantaneous, give it a tiny window so the
+  // collision pass can run once before LifetimeSystem reaps it.
+  world.add(id, Lifetime, { remainingMs: instantaneous ? 0.001 : lifetimeMs });
+  if (!instantaneous) {
+    world.add(id, FadeOverLife, { durationMs: lifetimeMs });
+  }
+  world.add(id, AreaDamage, {
+    damage,
+    ownerId: owner,
+    radius,
+    hit: new Set(),
+    instantaneous,
   });
   return id;
 }

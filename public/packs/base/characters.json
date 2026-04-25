@@ -30,6 +30,36 @@
       "baseSpeed": 220,
       "pickupRadius": 110,
       "sprite": { "color": 10079487, "radius": 11 }
+    },
+    {
+      "kind": "character",
+      "id": "gunner_hero",
+      "name": "Bacamarteiro",
+      "startWeaponId": "shotgun",
+      "baseHp": 110,
+      "baseSpeed": 170,
+      "pickupRadius": 90,
+      "sprite": { "color": 16751052, "radius": 12 }
+    },
+    {
+      "kind": "character",
+      "id": "trooper_hero",
+      "name": "Metralhador",
+      "startWeaponId": "smg",
+      "baseHp": 90,
+      "baseSpeed": 175,
+      "pickupRadius": 90,
+      "sprite": { "color": 7405567, "radius": 12 }
+    },
+    {
+      "kind": "character",
+      "id": "mage_hero",
+      "name": "Mago da Nova",
+      "startWeaponId": "nova",
+      "baseHp": 95,
+      "baseSpeed": 165,
+      "pickupRadius": 100,
+      "sprite": { "color": 16751052, "radius": 13 }
     }
   ]
 }

@@ -1191,6 +1191,61 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.pg__array {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  padding-left: 10px;
+  width: 100%;
+}
+
+.pg__array-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pg__array-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pg__array-item-title {
+  font-size: 12px;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
+.pg__btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: inherit;
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.pg__btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.pg__btn--danger {
+  background: rgba(239, 71, 111, 0.18);
+  border-color: rgba(239, 71, 111, 0.4);
+}
+
+.pg__btn--danger:hover {
+  background: rgba(239, 71, 111, 0.3);
+}
+
 .wave-editor {
   display: flex;
   flex-direction: column;

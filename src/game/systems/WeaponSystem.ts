@@ -1,8 +1,11 @@
 import type { Renderer } from "../../engine/Renderer";
 import type { World } from "../../engine/World";
 import type { EventBus } from "../../engine/events/EventBus";
-import { EnemyTag, PlayerTag, Position, WeaponState } from "../components";
-import { spawnProjectile } from "../factories";
+import type { WeaponShot } from "../../content/schema/weapon";
+import { EnemyTag, PlayerTag, Position, WeaponState, type PendingVolley } from "../components";
+import { spawnShot } from "../factories";
+
+const COOLDOWN_WHEN_NO_TARGET_MS = 100;
 
 export function weaponSystem(
   world: World,
@@ -10,38 +13,88 @@ export function weaponSystem(
   bus: EventBus,
   dt: number,
 ): void {
+  const dtMs = dt * 1000;
   for (const [id, weapon] of world.query(WeaponState)) {
     if (!world.has(id, PlayerTag)) continue;
-    weapon.cooldownLeft -= dt * 1000;
-    if (weapon.cooldownLeft > 0) continue;
 
-    const pos = world.get(id, Position);
-    if (!pos) continue;
+    weapon.clockMs += dtMs;
+    weapon.cooldownLeft -= dtMs;
 
-    const target = findNearestEnemy(world, pos.x, pos.y);
-    if (!target) {
-      weapon.cooldownLeft = 100;
-      continue;
+    if (weapon.cooldownLeft <= 0 && weapon.pendingVolleys.length === 0) {
+      const pos = world.get(id, Position);
+      if (!pos) continue;
+      const target = findNearestEnemy(world, pos.x, pos.y);
+      if (!target) {
+        weapon.cooldownLeft = COOLDOWN_WHEN_NO_TARGET_MS;
+        continue;
+      }
+      const dx = target.x - pos.x;
+      const dy = target.y - pos.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      scheduleBurst(weapon, ux, uy);
+      weapon.cooldownLeft = weapon.cooldownMs;
     }
 
-    const dx = target.x - pos.x;
-    const dy = target.y - pos.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const ux = dx / len;
-    const uy = dy / len;
-    const vx = ux * weapon.projectileSpeed;
-    const vy = uy * weapon.projectileSpeed;
+    while (weapon.pendingVolleys.length > 0 && weapon.pendingVolleys[0]!.atMs <= weapon.clockMs) {
+      const volley = weapon.pendingVolleys.shift()!;
+      const pos = world.get(id, Position);
+      if (!pos) continue;
+      fireVolley(world, renderer, bus, id, weapon, volley, pos.x, pos.y);
+    }
+  }
+}
 
-    spawnProjectile(world, renderer, id, pos.x, pos.y, vx, vy, weapon);
+function scheduleBurst(weapon: WeaponState, aimX: number, aimY: number): void {
+  const burst = weapon.burst;
+  const startMs = weapon.clockMs;
+  if (burst.volleys && burst.volleys.length > 0) {
+    let cursorMs = startMs;
+    for (const volley of burst.volleys) {
+      const at = volley.delayMs != null ? startMs + volley.delayMs : cursorMs;
+      weapon.pendingVolleys.push({ atMs: at, shots: volley.shots, aimX, aimY });
+      cursorMs = at + burst.volleyIntervalMs;
+    }
+    return;
+  }
+  // Metronome mode: repeat the default volley `volleyCount` times spaced by interval.
+  // Default volley = single straight projectile (also the `burst === null` case is
+  // pre-baked in burstConfigFromDef as a one-volley list, so this branch is reached
+  // only when an author specified volleyCount + interval without a volleys list).
+  const defaultShots: readonly WeaponShot[] = [
+    { type: "projectile", angleOffsetDeg: 0, damageMultiplier: 1, speedMultiplier: 1 },
+  ];
+  for (let i = 0; i < burst.volleyCount; i++) {
+    weapon.pendingVolleys.push({
+      atMs: startMs + i * burst.volleyIntervalMs,
+      shots: defaultShots,
+      aimX,
+      aimY,
+    });
+  }
+}
+
+function fireVolley(
+  world: World,
+  renderer: Renderer,
+  bus: EventBus,
+  ownerId: number,
+  weapon: WeaponState,
+  volley: PendingVolley,
+  x: number,
+  y: number,
+): void {
+  for (const shot of volley.shots) {
+    spawnShot(world, renderer, ownerId, x, y, volley.aimX, volley.aimY, shot, weapon);
     bus.emit("weaponFire", {
       weaponId: weapon.id,
-      ownerId: id,
-      x: pos.x,
-      y: pos.y,
-      dx: ux,
-      dy: uy,
+      ownerId,
+      x,
+      y,
+      dx: volley.aimX,
+      dy: volley.aimY,
     });
-    weapon.cooldownLeft = weapon.cooldownMs;
   }
 }
 

@@ -1,5 +1,6 @@
 import type { Container, Graphics } from "pixi.js";
 import { defineComponent, type EntityId } from "../../engine/World";
+import type { WeaponShot } from "../../content/schema/weapon";
 
 export interface Position {
   x: number;
@@ -40,6 +41,19 @@ export interface EnemySource {
   id: string;
 }
 
+export interface PendingVolley {
+  atMs: number;
+  shots: readonly WeaponShot[];
+  aimX: number;
+  aimY: number;
+}
+
+export interface WeaponBurstConfig {
+  volleyCount: number;
+  volleyIntervalMs: number;
+  volleys: readonly { delayMs?: number; shots: readonly WeaponShot[] }[] | null;
+}
+
 export interface WeaponState {
   id: string;
   cooldownLeft: number;
@@ -50,6 +64,9 @@ export interface WeaponState {
   projectileRadius: number;
   projectileColor: number;
   pierce: number;
+  burst: WeaponBurstConfig;
+  clockMs: number;
+  pendingVolleys: PendingVolley[];
 }
 
 export interface Projectile {
@@ -58,6 +75,15 @@ export interface Projectile {
   ownerId: EntityId;
   radius: number;
   hit: Set<EntityId>;
+}
+
+export interface AreaDamage {
+  damage: number;
+  ownerId: EntityId;
+  radius: number;
+  hit: Set<EntityId>;
+  /** When true, applies dano once and self-destructs in same tick. */
+  instantaneous: boolean;
 }
 
 export interface Lifetime {
@@ -104,6 +130,7 @@ export const EnemyAI = defineComponent<EnemyAI>("EnemyAI");
 export const EnemySource = defineComponent<EnemySource>("EnemySource");
 export const WeaponState = defineComponent<WeaponState>("WeaponState");
 export const Projectile = defineComponent<Projectile>("Projectile");
+export const AreaDamage = defineComponent<AreaDamage>("AreaDamage");
 export const Lifetime = defineComponent<Lifetime>("Lifetime");
 export const FlashTint = defineComponent<FlashTint>("FlashTint");
 export const FadeOverLife = defineComponent<FadeOverLife>("FadeOverLife");

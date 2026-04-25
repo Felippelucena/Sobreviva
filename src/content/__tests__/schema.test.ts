@@ -49,6 +49,99 @@ describe("WeaponDef", () => {
       }),
     ).toThrow();
   });
+
+  it("accepts a weapon without burst (legacy single-shot)", () => {
+    const parsed = WeaponDef.parse({
+      kind: "weapon",
+      id: "spark",
+      name: "Spark",
+      damage: 10,
+      cooldownMs: 500,
+      projectile: { speed: 300, radius: 4, lifetimeMs: 800 },
+    });
+    expect(parsed.burst).toBeUndefined();
+  });
+
+  it("accepts a burst with explicit volleys and projectile shots", () => {
+    const parsed = WeaponDef.parse({
+      kind: "weapon",
+      id: "shotgun",
+      name: "Shotgun",
+      damage: 8,
+      cooldownMs: 1000,
+      projectile: { speed: 400, radius: 4, lifetimeMs: 600 },
+      burst: {
+        volleyCount: 1,
+        volleys: [
+          {
+            shots: [
+              { type: "projectile", angleOffsetDeg: -15 },
+              { type: "projectile", angleOffsetDeg: 0 },
+              { type: "projectile", angleOffsetDeg: 15 },
+            ],
+          },
+        ],
+      },
+    });
+    expect(parsed.burst?.volleys?.[0]?.shots).toHaveLength(3);
+    const first = parsed.burst!.volleys![0]!.shots[0]!;
+    if (first.type === "projectile") {
+      expect(first.angleOffsetDeg).toBe(-15);
+      expect(first.damageMultiplier).toBe(1);
+      expect(first.speedMultiplier).toBe(1);
+    }
+  });
+
+  it("accepts an area shot", () => {
+    const parsed = WeaponDef.parse({
+      kind: "weapon",
+      id: "nova",
+      name: "Nova",
+      damage: 12,
+      cooldownMs: 1500,
+      projectile: { speed: 1, radius: 1, lifetimeMs: 1 },
+      burst: {
+        volleyCount: 1,
+        volleys: [{ shots: [{ type: "area", radius: 80 }] }],
+      },
+    });
+    const shot = parsed.burst!.volleys![0]!.shots[0]!;
+    expect(shot.type).toBe("area");
+    if (shot.type === "area") {
+      expect(shot.radius).toBe(80);
+      expect(shot.lifetimeMs).toBe(0);
+      expect(shot.damageMultiplier).toBe(1);
+    }
+  });
+
+  it("accepts a metronome burst (volleyCount + interval, no explicit volleys)", () => {
+    const parsed = WeaponDef.parse({
+      kind: "weapon",
+      id: "smg",
+      name: "SMG",
+      damage: 4,
+      cooldownMs: 1000,
+      projectile: { speed: 500, radius: 3, lifetimeMs: 600 },
+      burst: { volleyCount: 6, volleyIntervalMs: 50 },
+    });
+    expect(parsed.burst?.volleyCount).toBe(6);
+    expect(parsed.burst?.volleyIntervalMs).toBe(50);
+    expect(parsed.burst?.volleys).toBeUndefined();
+  });
+
+  it("rejects a volley with empty shots", () => {
+    expect(() =>
+      WeaponDef.parse({
+        kind: "weapon",
+        id: "bad",
+        name: "Bad",
+        damage: 1,
+        cooldownMs: 500,
+        projectile: { speed: 300, radius: 4, lifetimeMs: 800 },
+        burst: { volleyCount: 1, volleys: [{ shots: [] }] },
+      }),
+    ).toThrow();
+  });
 });
 
 describe("EnemyDef", () => {

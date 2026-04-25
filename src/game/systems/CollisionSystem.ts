@@ -6,12 +6,14 @@ import type { EventBus } from "../../engine/events/EventBus";
 import type { ContentRegistry } from "../../content/registry/ContentRegistry";
 import type { GameState } from "../GameState";
 import {
+  AreaDamage,
   ContactDamage,
   EnemySource,
   EnemyTag,
   FlashTint,
   Health,
   Hitbox,
+  Lifetime,
   Position,
   Projectile,
   ProjectileTag,
@@ -41,6 +43,7 @@ export function collisionSystem(deps: CollisionDeps, nowMs: number): void {
 
   resolvePlayerVsEnemies(deps, nowMs);
   resolveProjectilesVsEnemies(deps, nowMs);
+  resolveAreaVsEnemies(deps, nowMs);
 }
 
 function resolvePlayerVsEnemies(deps: CollisionDeps, nowMs: number): void {
@@ -151,6 +154,47 @@ function dropXpFor(
   if (!def) return;
   const jitter = 6;
   spawnPickup(world, renderer, pos.x + rng.range(-jitter, jitter), pos.y + rng.range(-jitter, jitter), def);
+}
+
+function resolveAreaVsEnemies(deps: CollisionDeps, nowMs: number): void {
+  const { world, grid, state, renderer, registry, rng, bus } = deps;
+  const candidates: EntityId[] = [];
+  for (const [aid, apos, area] of world.query(Position, AreaDamage)) {
+    candidates.length = 0;
+    grid.queryCircle(apos.x, apos.y, area.radius + 32, candidates);
+    for (const eid of candidates) {
+      if (!world.isAlive(eid)) continue;
+      if (area.hit.has(eid)) continue;
+      const epos = world.get(eid, Position);
+      const ehb = world.get(eid, Hitbox);
+      const ehp = world.get(eid, Health);
+      if (!epos || !ehb || !ehp) continue;
+      const r = area.radius + ehb.radius;
+      const dx = epos.x - apos.x;
+      const dy = epos.y - apos.y;
+      if (dx * dx + dy * dy > r * r) continue;
+
+      ehp.current -= area.damage;
+      area.hit.add(eid);
+      spawnDamageNumber(world, renderer, epos.x, epos.y - ehb.radius, Math.round(area.damage));
+      const eflash = world.get(eid, FlashTint);
+      if (eflash) {
+        eflash.color = 0xffffff;
+        eflash.until = nowMs + 80;
+      }
+      if (ehp.current <= 0) {
+        const enemySource = world.get(eid, EnemySource);
+        const enemyId = enemySource?.id ?? "";
+        spawnDeathParticles(world, renderer, epos.x, epos.y, eflash?.base ?? 0xef476f, rng);
+        killEnemy(world, eid, state, registry, renderer, rng);
+        bus.emit("enemyDeath", { enemyId, entityId: eid, x: epos.x, y: epos.y });
+      }
+    }
+    if (area.instantaneous) {
+      const lifetime = world.get(aid, Lifetime);
+      if (lifetime) lifetime.remainingMs = 0;
+    }
+  }
 }
 
 export function destroyEntityWithDisplay(world: World, id: EntityId): void {

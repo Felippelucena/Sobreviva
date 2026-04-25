@@ -42,6 +42,76 @@
         "pierce": 0,
         "color": 10079487
       }
+    },
+    {
+      "kind": "weapon",
+      "id": "shotgun",
+      "name": "Bacamarte",
+      "damage": 7,
+      "cooldownMs": 950,
+      "projectile": {
+        "speed": 420,
+        "radius": 4,
+        "lifetimeMs": 480,
+        "pierce": 0,
+        "color": 16751052
+      },
+      "burst": {
+        "volleyCount": 1,
+        "volleyIntervalMs": 0,
+        "volleys": [
+          {
+            "shots": [
+              { "type": "projectile", "angleOffsetDeg": -15 },
+              { "type": "projectile", "angleOffsetDeg": 0 },
+              { "type": "projectile", "angleOffsetDeg": 15 }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "weapon",
+      "id": "smg",
+      "name": "Metralha",
+      "damage": 4,
+      "cooldownMs": 950,
+      "projectile": {
+        "speed": 520,
+        "radius": 3,
+        "lifetimeMs": 600,
+        "pierce": 0,
+        "color": 7405567
+      },
+      "burst": {
+        "volleyCount": 6,
+        "volleyIntervalMs": 50
+      }
+    },
+    {
+      "kind": "weapon",
+      "id": "nova",
+      "name": "Nova",
+      "damage": 22,
+      "cooldownMs": 1400,
+      "projectile": {
+        "speed": 1,
+        "radius": 1,
+        "lifetimeMs": 1,
+        "pierce": 0,
+        "color": 16751052
+      },
+      "burst": {
+        "volleyCount": 1,
+        "volleyIntervalMs": 0,
+        "volleys": [
+          {
+            "shots": [
+              { "type": "area", "radius": 90, "color": 16751052, "lifetimeMs": 180 }
+            ]
+          }
+        ]
+      }
     }
   ]
 }
