@@ -192,9 +192,13 @@ export function spawnAreaHit(
   world.add(id, Position, { x, y, prevX: x, prevY: y });
   world.add(id, SpriteRef, { display: g });
   world.add(id, Hitbox, { radius });
-  // Lifetime drives auto-destruction. For instantaneous, give it a tiny window so the
-  // collision pass can run once before LifetimeSystem reaps it.
-  world.add(id, Lifetime, { remainingMs: instantaneous ? 0.001 : lifetimeMs });
+  // For lifetime-bound AOEs, Lifetime drives auto-destruction. For instantaneous,
+  // we set a 1-tick lifetime so it survives long enough for the *next* collision
+  // pass to apply damage; CollisionSystem zeroes the lifetime after that pass so
+  // LifetimeSystem reaps it on the next tick. (See WeaponSystem ordering: weapon
+  // spawns AOE *after* collisionSystem in the same tick, so collisions can only
+  // run on the following tick.)
+  world.add(id, Lifetime, { remainingMs: instantaneous ? lifetimeMsTickFloor() : lifetimeMs });
   if (!instantaneous) {
     world.add(id, FadeOverLife, { durationMs: lifetimeMs });
   }
@@ -206,6 +210,11 @@ export function spawnAreaHit(
     instantaneous,
   });
   return id;
+}
+
+// One fixed tick at 60Hz, plus a small slack to survive a single LifetimeSystem decrement.
+function lifetimeMsTickFloor(): number {
+  return 1000 / 60 + 1;
 }
 
 export function spawnPickup(
