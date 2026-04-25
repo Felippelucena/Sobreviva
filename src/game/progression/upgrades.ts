@@ -4,8 +4,8 @@ import {
   PlayerProgress,
   Velocity,
   WeaponState,
-  type WeaponBurstConfig,
 } from "../components";
+import type { WeaponShot } from "../../content/schema/weapon";
 
 export interface Upgrade {
   id: string;
@@ -14,8 +14,8 @@ export interface Upgrade {
   apply: (world: World, playerId: EntityId) => void;
 }
 
-function eachShot(burst: WeaponBurstConfig, fn: (shot: NonNullable<WeaponBurstConfig["volleys"][number]>["shots"][number]) => void): void {
-  for (const volley of burst.volleys) for (const shot of volley.shots) fn(shot);
+function eachShot(weapon: WeaponState, fn: (shot: WeaponShot) => void): void {
+  for (const volley of weapon.volleys) for (const shot of volley.shots) fn(shot);
 }
 
 export const UPGRADES: readonly Upgrade[] = [
@@ -26,7 +26,7 @@ export const UPGRADES: readonly Upgrade[] = [
     apply: (world, id) => {
       const w = world.get(id, WeaponState);
       if (!w) return;
-      eachShot(w.burst, (s) => {
+      eachShot(w, (s) => {
         s.damage *= 1.2;
       });
     },
@@ -47,7 +47,7 @@ export const UPGRADES: readonly Upgrade[] = [
     apply: (world, id) => {
       const w = world.get(id, WeaponState);
       if (!w) return;
-      eachShot(w.burst, (s) => {
+      eachShot(w, (s) => {
         if (s.type === "projectile") s.projectile.speed *= 1.15;
       });
     },
@@ -59,7 +59,7 @@ export const UPGRADES: readonly Upgrade[] = [
     apply: (world, id) => {
       const w = world.get(id, WeaponState);
       if (!w) return;
-      eachShot(w.burst, (s) => {
+      eachShot(w, (s) => {
         if (s.type === "projectile") s.projectile.pierce += 1;
       });
     },

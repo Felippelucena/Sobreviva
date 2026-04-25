@@ -29,14 +29,10 @@ export const AreaShot = z.object({
 export const WeaponShot = z.discriminatedUnion("type", [ProjectileShot, AreaShot]);
 
 export const WeaponVolley = z.object({
-  delayMs: NonNegativeNumber.optional(),
+  startMs: NonNegativeNumber.default(0),
+  projectileCount: z.number().int().positive().default(1),
+  projectileIntervalMs: NonNegativeNumber.default(0),
   shots: z.array(WeaponShot).min(1),
-});
-
-export const WeaponBurst = z.object({
-  volleyCount: z.number().int().positive().default(1),
-  volleyIntervalMs: NonNegativeNumber.default(0),
-  volleys: z.array(WeaponVolley).min(1),
 });
 
 export const WeaponDef = z.object({
@@ -44,7 +40,7 @@ export const WeaponDef = z.object({
   id: Id,
   name: z.string().min(1),
   cooldownMs: PositiveNumber,
-  burst: WeaponBurst,
+  volleys: z.array(WeaponVolley).min(1),
 });
 
 export type WeaponDef = z.infer<typeof WeaponDef>;
@@ -53,4 +49,3 @@ export type WeaponShot = z.infer<typeof WeaponShot>;
 export type ProjectileShot = z.infer<typeof ProjectileShot>;
 export type AreaShot = z.infer<typeof AreaShot>;
 export type WeaponVolley = z.infer<typeof WeaponVolley>;
-export type WeaponBurst = z.infer<typeof WeaponBurst>;

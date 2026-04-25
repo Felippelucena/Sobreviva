@@ -73,17 +73,15 @@ export function weaponStateFromDef(weapon: WeaponDef): WeaponState {
     id: weapon.id,
     cooldownLeft: 0,
     cooldownMs: weapon.cooldownMs,
-    burst: {
-      volleyCount: weapon.burst.volleyCount,
-      volleyIntervalMs: weapon.burst.volleyIntervalMs,
-      // Deep clone so runtime upgrades can mutate without touching the frozen def.
-      volleys: weapon.burst.volleys.map((v) => ({
-        ...(v.delayMs != null ? { delayMs: v.delayMs } : {}),
-        shots: v.shots.map((s) => structuredClone(s) as WeaponShot),
-      })),
-    },
+    // Deep clone so runtime upgrades can mutate without touching the frozen def.
+    volleys: weapon.volleys.map((v) => ({
+      startMs: v.startMs,
+      projectileCount: v.projectileCount,
+      projectileIntervalMs: v.projectileIntervalMs,
+      shots: v.shots.map((s) => structuredClone(s) as WeaponShot),
+    })),
     clockMs: 0,
-    pendingVolleys: [],
+    pendingShots: [],
   };
 }
 

@@ -8,22 +8,21 @@ function baseWeapon(): WeaponDef {
     id: "spark",
     name: "Spark",
     cooldownMs: 500,
-    burst: {
-      volleyCount: 1,
-      volleyIntervalMs: 0,
-      volleys: [
-        {
-          shots: [
-            {
-              type: "projectile",
-              angleOffsetDeg: 0,
-              damage: 10,
-              projectile: { speed: 300, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
-            },
-          ],
-        },
-      ],
-    },
+    volleys: [
+      {
+        startMs: 0,
+        projectileCount: 1,
+        projectileIntervalMs: 0,
+        shots: [
+          {
+            type: "projectile",
+            angleOffsetDeg: 0,
+            damage: 10,
+            projectile: { speed: 300, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -36,15 +35,22 @@ describe("mergeDef", () => {
     expect(merged.name).toBe("Spark");
   });
 
-  it("shallow-merges nested burst object one level deep", () => {
+  it("replaces volleys array when override provides one", () => {
     const a = baseWeapon();
     const b: WeaponDef = {
       ...baseWeapon(),
-      burst: { ...baseWeapon().burst, volleyCount: 7 },
+      volleys: [
+        {
+          startMs: 100,
+          projectileCount: 3,
+          projectileIntervalMs: 25,
+          shots: baseWeapon().volleys[0]!.shots,
+        },
+      ],
     };
     const merged = mergeDef(a, b) as WeaponDef;
-    expect(merged.burst.volleyCount).toBe(7);
-    expect(merged.burst.volleyIntervalMs).toBe(0);
+    expect(merged.volleys[0]!.projectileCount).toBe(3);
+    expect(merged.volleys[0]!.startMs).toBe(100);
   });
 
   it("throws on kind mismatch", () => {

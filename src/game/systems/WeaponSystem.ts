@@ -1,7 +1,7 @@
 import type { Renderer } from "../../engine/Renderer";
 import type { World } from "../../engine/World";
 import type { EventBus } from "../../engine/events/EventBus";
-import { EnemyTag, PlayerTag, Position, WeaponState, type PendingVolley } from "../components";
+import { EnemyTag, PlayerTag, Position, WeaponState, type PendingShot } from "../components";
 import { spawnShot } from "../factories";
 
 const COOLDOWN_WHEN_NO_TARGET_MS = 100;
@@ -19,7 +19,7 @@ export function weaponSystem(
     weapon.clockMs += dtMs;
     weapon.cooldownLeft -= dtMs;
 
-    if (weapon.cooldownLeft <= 0 && weapon.pendingVolleys.length === 0) {
+    if (weapon.cooldownLeft <= 0 && weapon.pendingShots.length === 0) {
       const pos = world.get(id, Position);
       if (!pos) continue;
       const target = findNearestEnemy(world, pos.x, pos.y);
@@ -30,52 +30,56 @@ export function weaponSystem(
       const dx = target.x - pos.x;
       const dy = target.y - pos.y;
       const len = Math.hypot(dx, dy) || 1;
-      scheduleBurst(weapon, dx / len, dy / len);
+      scheduleVolleys(weapon, dx / len, dy / len);
       weapon.cooldownLeft = weapon.cooldownMs;
     }
 
-    while (weapon.pendingVolleys.length > 0 && weapon.pendingVolleys[0]!.atMs <= weapon.clockMs) {
-      const volley = weapon.pendingVolleys.shift()!;
+    while (weapon.pendingShots.length > 0 && weapon.pendingShots[0]!.atMs <= weapon.clockMs) {
+      const pending = weapon.pendingShots.shift()!;
       const pos = world.get(id, Position);
       if (!pos) continue;
-      fireVolley(world, renderer, bus, id, weapon, volley, pos.x, pos.y);
+      fireShots(world, renderer, bus, id, weapon.id, pending, pos.x, pos.y);
     }
   }
 }
 
-function scheduleBurst(weapon: WeaponState, aimX: number, aimY: number): void {
-  const burst = weapon.burst;
+function scheduleVolleys(weapon: WeaponState, aimX: number, aimY: number): void {
   const startMs = weapon.clockMs;
-  let cursorMs = startMs;
-  // Outer loop: volleyCount tells how many times to repeat the volleys[] sequence.
-  for (let rep = 0; rep < burst.volleyCount; rep++) {
-    for (const volley of burst.volleys) {
-      const at = volley.delayMs != null ? cursorMs + volley.delayMs : cursorMs;
-      weapon.pendingVolleys.push({ atMs: at, shots: volley.shots, aimX, aimY });
-      cursorMs = at + burst.volleyIntervalMs;
+  for (const volley of weapon.volleys) {
+    const volleyOriginMs = startMs + volley.startMs;
+    for (let i = 0; i < volley.projectileCount; i++) {
+      weapon.pendingShots.push({
+        atMs: volleyOriginMs + i * volley.projectileIntervalMs,
+        shots: volley.shots,
+        aimX,
+        aimY,
+      });
     }
   }
+  // Keep the queue ordered by time so the drain loop fires shots in temporal order
+  // even when volleys are authored out of sequence.
+  weapon.pendingShots.sort((a, b) => a.atMs - b.atMs);
 }
 
-function fireVolley(
+function fireShots(
   world: World,
   renderer: Renderer,
   bus: EventBus,
   ownerId: number,
-  weapon: WeaponState,
-  volley: PendingVolley,
+  weaponId: string,
+  pending: PendingShot,
   x: number,
   y: number,
 ): void {
-  for (const shot of volley.shots) {
-    spawnShot(world, renderer, ownerId, x, y, volley.aimX, volley.aimY, shot);
+  for (const shot of pending.shots) {
+    spawnShot(world, renderer, ownerId, x, y, pending.aimX, pending.aimY, shot);
     bus.emit("weaponFire", {
-      weaponId: weapon.id,
+      weaponId,
       ownerId,
       x,
       y,
-      dx: volley.aimX,
-      dy: volley.aimY,
+      dx: pending.aimX,
+      dy: pending.aimY,
     });
   }
 }

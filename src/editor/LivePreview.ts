@@ -30,22 +30,21 @@ const FALLBACK_WEAPON: WeaponDef = {
   id: "_preview",
   name: "Preview",
   cooldownMs: 500,
-  burst: {
-    volleyCount: 1,
-    volleyIntervalMs: 0,
-    volleys: [
-      {
-        shots: [
-          {
-            type: "projectile",
-            angleOffsetDeg: 0,
-            damage: 10,
-            projectile: { speed: 320, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
-          },
-        ],
-      },
-    ],
-  },
+  volleys: [
+    {
+      startMs: 0,
+      projectileCount: 1,
+      projectileIntervalMs: 0,
+      shots: [
+        {
+          type: "projectile",
+          angleOffsetDeg: 0,
+          damage: 10,
+          projectile: { speed: 320, radius: 4, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
+        },
+      ],
+    },
+  ],
 };
 
 const FALLBACK_ENEMY: EnemyDef = {

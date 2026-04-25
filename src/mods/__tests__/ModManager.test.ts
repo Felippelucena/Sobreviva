@@ -35,22 +35,21 @@ function buildBundle(id: string, damage = 50, priority = 50): unknown {
         id: "spark",
         name: "Spark",
         cooldownMs: 500,
-        burst: {
-          volleyCount: 1,
-          volleyIntervalMs: 0,
-          volleys: [
-            {
-              shots: [
-                {
-                  type: "projectile",
-                  angleOffsetDeg: 0,
-                  damage,
-                  projectile: { speed: 300, radius: 4, lifetimeMs: 800 },
-                },
-              ],
-            },
-          ],
-        },
+        volleys: [
+          {
+            startMs: 0,
+            projectileCount: 1,
+            projectileIntervalMs: 0,
+            shots: [
+              {
+                type: "projectile",
+                angleOffsetDeg: 0,
+                damage,
+                projectile: { speed: 300, radius: 4, lifetimeMs: 800 },
+              },
+            ],
+          },
+        ],
       },
     ],
   };
@@ -83,8 +82,8 @@ describe("ModManager", () => {
     const mod = m.get("a")!;
     expect(mod.enabled).toBe(false);
     expect(mod.priority).toBe(200);
-    const w = mod.bundle.defs[0] as { burst: { volleys: { shots: { damage: number }[] }[] } };
-    expect(w.burst.volleys[0]!.shots[0]!.damage).toBe(99);
+    const w = mod.bundle.defs[0] as { volleys: { shots: { damage: number }[] }[] };
+    expect(w.volleys[0]!.shots[0]!.damage).toBe(99);
   });
 
   it("persists across instances through the save store", () => {

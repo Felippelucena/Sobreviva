@@ -9,22 +9,21 @@ function sampleWeapon(damage = 30): WeaponDef {
     id: "spark",
     name: "Spark Plus",
     cooldownMs: 500,
-    burst: {
-      volleyCount: 1,
-      volleyIntervalMs: 0,
-      volleys: [
-        {
-          shots: [
-            {
-              type: "projectile",
-              angleOffsetDeg: 0,
-              damage,
-              projectile: { speed: 400, radius: 5, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
-            },
-          ],
-        },
-      ],
-    },
+    volleys: [
+      {
+        startMs: 0,
+        projectileCount: 1,
+        projectileIntervalMs: 0,
+        shots: [
+          {
+            type: "projectile",
+            angleOffsetDeg: 0,
+            damage,
+            projectile: { speed: 400, radius: 5, lifetimeMs: 800, pierce: 0, color: 0xffd166 },
+          },
+        ],
+      },
+    ],
   };
 }
 

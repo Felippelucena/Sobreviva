@@ -41,27 +41,28 @@ export interface EnemySource {
   id: string;
 }
 
-export interface PendingVolley {
+export interface PendingShot {
   atMs: number;
   shots: readonly WeaponShot[];
   aimX: number;
   aimY: number;
 }
 
-export interface WeaponBurstConfig {
-  volleyCount: number;
-  volleyIntervalMs: number;
-  // Mutable so runtime upgrades can buff shots in-place.
-  volleys: { delayMs?: number; shots: WeaponShot[] }[];
+export interface WeaponVolleyState {
+  startMs: number;
+  projectileCount: number;
+  projectileIntervalMs: number;
+  shots: WeaponShot[];
 }
 
 export interface WeaponState {
   id: string;
   cooldownLeft: number;
   cooldownMs: number;
-  burst: WeaponBurstConfig;
+  // Mutable so runtime upgrades can buff shots in-place.
+  volleys: WeaponVolleyState[];
   clockMs: number;
-  pendingVolleys: PendingVolley[];
+  pendingShots: PendingShot[];
 }
 
 export interface Projectile {
