@@ -10,7 +10,7 @@ import type {
   UpgradeDef,
   WeaponDef,
 } from "../content/schema";
-import { validateUpgradeDef } from "../content/schema/upgrade";
+import { UpgradeDef as UpgradeDefSchema, validateUpgradeDef } from "../content/schema/upgrade";
 import { EnemyTag, Position } from "../game/components";
 import { spawnPickup } from "../game/factories";
 import type { GameState } from "../game/GameState";
@@ -88,12 +88,20 @@ export function createModApi(runtime: ModRuntime, ctxRef: { value: GameContext |
     registerEnemy: (def) => runtime.dynamicDefs.push(def),
     registerPickup: (def) => runtime.dynamicDefs.push(def),
     registerUpgrade: (def) => {
-      const err = validateUpgradeDef(def);
+      const parsed = UpgradeDefSchema.safeParse(def);
+      if (!parsed.success) {
+        console.warn(`[mod:${runtime.packId}] registerUpgrade rejected by schema:`, parsed.error.issues);
+        return;
+      }
+      const err = validateUpgradeDef(parsed.data);
       if (err) {
         console.warn(`[mod:${runtime.packId}] registerUpgrade rejected: ${err}`);
         return;
       }
-      runtime.dynamicDefs.push(def);
+      // Push the parsed copy (not the caller's reference) so the mod cannot mutate
+      // the def after validation passed (closes a TOCTOU window before the registry
+      // deep-freezes it on the next rebuild).
+      runtime.dynamicDefs.push(parsed.data);
     },
     on: (event, handler) => {
       let list = runtime.handlers.get(event);

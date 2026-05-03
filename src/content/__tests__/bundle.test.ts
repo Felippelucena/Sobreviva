@@ -26,7 +26,7 @@ function sampleWeapon(damage = 30): WeaponDef {
 
 function validBundle(): BundledPack {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     manifest: {
       id: "mymod",
       name: "My Mod",
@@ -73,7 +73,7 @@ describe("bundleFromLoadedPack", () => {
   it("roundtrips a loaded pack to a bundle", () => {
     const pack: LoadedPack = {
       manifest: {
-        schemaVersion: 1,
+        schemaVersion: 2,
         id: "base",
         name: "Base",
         version: "0.1.0",

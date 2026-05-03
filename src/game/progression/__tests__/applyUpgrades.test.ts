@@ -54,10 +54,12 @@ const cooldownUpgrade: UpgradeDef = {
   id: "cooldown",
   name: "Cooldown",
   desc: "",
-  scope: "weapon",
-  maxLevel: 3,
-  target: { path: "cooldownMs", op: "mul" },
-  values: [0.9, 0.75, 0.5],
+  scope: { kind: "weapon" },
+  levels: [
+    { name: "L1", description: "", improvements: [{ type: "attr", path: "cooldownMs", op: "mul", value: 0.9 }] },
+    { name: "L2", description: "", improvements: [{ type: "attr", path: "cooldownMs", op: "mul", value: 0.75 }] },
+    { name: "L3", description: "", improvements: [{ type: "attr", path: "cooldownMs", op: "mul", value: 0.5 }] },
+  ],
 };
 
 const damageUpgrade: UpgradeDef = {
@@ -65,10 +67,12 @@ const damageUpgrade: UpgradeDef = {
   id: "damage",
   name: "Damage",
   desc: "",
-  scope: "weapon",
-  maxLevel: 3,
-  target: { path: "shots[].damage", op: "mul" },
-  values: [1.5, 2, 3],
+  scope: { kind: "weapon" },
+  levels: [
+    { name: "L1", description: "", improvements: [{ type: "attr", path: "shots[].damage", op: "mul", value: 1.5, shotSelect: { select: "all" } }] },
+    { name: "L2", description: "", improvements: [{ type: "attr", path: "shots[].damage", op: "mul", value: 2, shotSelect: { select: "all" } }] },
+    { name: "L3", description: "", improvements: [{ type: "attr", path: "shots[].damage", op: "mul", value: 3, shotSelect: { select: "all" } }] },
+  ],
 };
 
 const pierceUpgrade: UpgradeDef = {
@@ -76,10 +80,12 @@ const pierceUpgrade: UpgradeDef = {
   id: "pierce",
   name: "Pierce",
   desc: "",
-  scope: "weapon",
-  maxLevel: 3,
-  target: { path: "shots[].projectile.pierce", op: "add" },
-  values: [1, 2, 3],
+  scope: { kind: "weapon" },
+  levels: [
+    { name: "L1", description: "", improvements: [{ type: "attr", path: "shots[].projectile.pierce", op: "add", value: 1, shotSelect: { select: "type", shotType: "projectile" } }] },
+    { name: "L2", description: "", improvements: [{ type: "attr", path: "shots[].projectile.pierce", op: "add", value: 2, shotSelect: { select: "type", shotType: "projectile" } }] },
+    { name: "L3", description: "", improvements: [{ type: "attr", path: "shots[].projectile.pierce", op: "add", value: 3, shotSelect: { select: "type", shotType: "projectile" } }] },
+  ],
 };
 
 const moveSpeedUpgrade: UpgradeDef = {
@@ -87,10 +93,12 @@ const moveSpeedUpgrade: UpgradeDef = {
   id: "move_speed",
   name: "Move",
   desc: "",
-  scope: "character",
-  maxLevel: 3,
-  target: { path: "baseSpeed", op: "mul" },
-  values: [1.1, 1.25, 1.5],
+  scope: { kind: "character" },
+  levels: [
+    { name: "L1", description: "", improvements: [{ type: "attr", path: "baseSpeed", op: "mul", value: 1.1 }] },
+    { name: "L2", description: "", improvements: [{ type: "attr", path: "baseSpeed", op: "mul", value: 1.25 }] },
+    { name: "L3", description: "", improvements: [{ type: "attr", path: "baseSpeed", op: "mul", value: 1.5 }] },
+  ],
 };
 
 const maxHpUpgrade: UpgradeDef = {
@@ -98,10 +106,12 @@ const maxHpUpgrade: UpgradeDef = {
   id: "max_hp",
   name: "HP",
   desc: "",
-  scope: "character",
-  maxLevel: 3,
-  target: { path: "baseHp", op: "add" },
-  values: [25, 50, 100],
+  scope: { kind: "character" },
+  levels: [
+    { name: "L1", description: "", improvements: [{ type: "attr", path: "baseHp", op: "add", value: 25 }] },
+    { name: "L2", description: "", improvements: [{ type: "attr", path: "baseHp", op: "add", value: 50 }] },
+    { name: "L3", description: "", improvements: [{ type: "attr", path: "baseHp", op: "add", value: 100 }] },
+  ],
 };
 
 describe("applyUpgradesToWeapon", () => {
@@ -112,13 +122,13 @@ describe("applyUpgradesToWeapon", () => {
     expect(w.cooldownMs).toBe(1000);
   });
 
-  it("applies mul on array path to every shot", () => {
+  it("applies mul on array path to every shot when shotSelect=all", () => {
     const out = applyUpgradesToWeapon(makeWeapon(), [{ def: damageUpgrade, level: 1 }]);
     expect(out.shots[0]!.damage).toBeCloseTo(15);
     expect(out.shots[1]!.damage).toBeCloseTo(12);
   });
 
-  it("applies add on nested array path", () => {
+  it("applies add on nested array path filtered by shot type", () => {
     const out = applyUpgradesToWeapon(makeWeapon(), [{ def: pierceUpgrade, level: 3 }]);
     expect((out.shots[0] as { projectile: { pierce: number } }).projectile.pierce).toBe(3);
     expect((out.shots[1] as { projectile: { pierce: number } }).projectile.pierce).toBe(3);
@@ -130,7 +140,7 @@ describe("applyUpgradesToWeapon", () => {
     expect(a.cooldownMs).toBe(b.cooldownMs);
   });
 
-  it("absolute multiplier — level 3 is base*values[2], NOT base*v0*v1*v2", () => {
+  it("absolute multiplier — level 3 is base*level3 value, NOT cumulative", () => {
     const out = applyUpgradesToWeapon(makeWeapon(), [{ def: cooldownUpgrade, level: 3 }]);
     expect(out.cooldownMs).toBe(500); // 1000 * 0.5
     expect(out.cooldownMs).not.toBe(1000 * 0.9 * 0.75 * 0.5);
@@ -147,7 +157,17 @@ describe("applyUpgradesToWeapon", () => {
     expect(w.shots[0]!.damage).toBe(10);
   });
 
-  it("silently skips non-matching paths (e.g. pierce on area shot)", () => {
+  it("scope.ids restricts to listed weapon ids only", () => {
+    const restricted: UpgradeDef = {
+      ...cooldownUpgrade,
+      id: "rifle_only",
+      scope: { kind: "weapon", ids: ["rifle"] },
+    };
+    const out = applyUpgradesToWeapon(makeWeapon(), [{ def: restricted, level: 2 }]);
+    expect(out.cooldownMs).toBe(1000);
+  });
+
+  it("silently skips non-matching shots when shotSelect filters by type", () => {
     const areaWeapon: WeaponDef = {
       ...makeWeapon(),
       shots: [
@@ -170,7 +190,27 @@ describe("applyUpgradesToWeapon", () => {
     ).not.toThrow();
   });
 
-  it("pushShot appends one shot per level (level 2 = 2 added)", () => {
+  it("shotSelect=index targets only the chosen shot", () => {
+    const onlyFirst: UpgradeDef = {
+      kind: "upgrade",
+      id: "only_first",
+      name: "Only first",
+      desc: "",
+      scope: { kind: "weapon" },
+      levels: [
+        {
+          name: "L1",
+          description: "",
+          improvements: [{ type: "attr", path: "shots[].damage", op: "set", value: 999, shotSelect: { select: "index", index: 0 } }],
+        },
+      ],
+    };
+    const out = applyUpgradesToWeapon(makeWeapon(), [{ def: onlyFirst, level: 1 }]);
+    expect(out.shots[0]!.damage).toBe(999);
+    expect(out.shots[1]!.damage).toBe(8);
+  });
+
+  it("pushShot adds exactly one shot per pushShot improvement at the level", () => {
     const newShot = {
       type: "projectile" as const,
       startMs: 0,
@@ -185,67 +225,69 @@ describe("applyUpgradesToWeapon", () => {
       id: "extra_shot",
       name: "Extra Shot",
       desc: "",
-      scope: "weapon",
-      maxLevel: 2,
-      target: { path: "shots", op: "pushShot" },
-      values: [newShot, { ...newShot, angleOffsetDeg: -30 }],
+      scope: { kind: "weapon" },
+      levels: [
+        { name: "L1", description: "", improvements: [{ type: "pushShot", shot: newShot }] },
+        { name: "L2", description: "", improvements: [{ type: "pushShot", shot: { ...newShot, angleOffsetDeg: -30 } }] },
+      ],
     };
     const out = applyUpgradesToWeapon(makeWeapon(), [{ def: pushUpgrade, level: 2 }]);
-    expect(out.shots).toHaveLength(4);
+    expect(out.shots).toHaveLength(3);
     const s2 = out.shots[2]!;
-    const s3 = out.shots[3]!;
-    if (s2.type !== "projectile" || s3.type !== "projectile") {
-      throw new Error("expected both pushed shots to be projectile");
-    }
-    expect(s2.angleOffsetDeg).toBe(30);
-    expect(s3.angleOffsetDeg).toBe(-30);
+    if (s2.type !== "projectile") throw new Error("expected pushed shot to be projectile");
+    expect(s2.angleOffsetDeg).toBe(-30);
+  });
+
+  it("multi-improvement level applies every improvement in one block", () => {
+    const combo: UpgradeDef = {
+      kind: "upgrade",
+      id: "combo",
+      name: "Combo",
+      desc: "",
+      scope: { kind: "weapon" },
+      levels: [
+        {
+          name: "Power",
+          description: "damage + pierce",
+          improvements: [
+            { type: "attr", path: "shots[].damage", op: "mul", value: 2, shotSelect: { select: "all" } },
+            { type: "attr", path: "shots[].projectile.pierce", op: "add", value: 1, shotSelect: { select: "type", shotType: "projectile" } },
+          ],
+        },
+      ],
+    };
+    const out = applyUpgradesToWeapon(makeWeapon(), [{ def: combo, level: 1 }]);
+    expect(out.shots[0]!.damage).toBe(20);
+    expect((out.shots[0] as { projectile: { pierce: number } }).projectile.pierce).toBe(1);
   });
 });
 
 describe("applyUpgradesToWeapon — security", () => {
-  it("rejects path containing __proto__ (prototype pollution attempt)", () => {
-    const evil: UpgradeDef = {
+  function evilAttr(path: string, value: number): UpgradeDef {
+    return {
       kind: "upgrade",
       id: "evil",
       name: "Evil",
       desc: "",
-      scope: "weapon",
-      maxLevel: 1,
-      target: { path: "__proto__.polluted", op: "set" },
-      values: [42],
+      scope: { kind: "weapon" },
+      levels: [
+        { name: "L1", description: "", improvements: [{ type: "attr", path, op: "set", value }] },
+      ],
     };
-    applyUpgradesToWeapon(makeWeapon(), [{ def: evil, level: 1 }]);
+  }
+
+  it("rejects path containing __proto__ (prototype pollution attempt)", () => {
+    applyUpgradesToWeapon(makeWeapon(), [{ def: evilAttr("__proto__.polluted", 42), level: 1 }]);
     expect((Object.prototype as Record<string, unknown>)["polluted"]).toBeUndefined();
   });
 
   it("rejects path containing constructor.prototype", () => {
-    const evil: UpgradeDef = {
-      kind: "upgrade",
-      id: "evil2",
-      name: "Evil2",
-      desc: "",
-      scope: "weapon",
-      maxLevel: 1,
-      target: { path: "constructor.prototype.polluted2", op: "set" },
-      values: [99],
-    };
-    applyUpgradesToWeapon(makeWeapon(), [{ def: evil, level: 1 }]);
+    applyUpgradesToWeapon(makeWeapon(), [{ def: evilAttr("constructor.prototype.polluted2", 99), level: 1 }]);
     expect((Object.prototype as Record<string, unknown>)["polluted2"]).toBeUndefined();
   });
 
   it("ignores path that only matches via prototype chain (uses hasOwn)", () => {
-    const sneaky: UpgradeDef = {
-      kind: "upgrade",
-      id: "sneaky",
-      name: "Sneaky",
-      desc: "",
-      scope: "weapon",
-      maxLevel: 1,
-      // toString exists on every object via Object.prototype, but is not own.
-      target: { path: "toString", op: "set" },
-      values: [123],
-    };
-    const out = applyUpgradesToWeapon(makeWeapon(), [{ def: sneaky, level: 1 }]);
+    const out = applyUpgradesToWeapon(makeWeapon(), [{ def: evilAttr("toString", 123), level: 1 }]);
     expect(typeof out.toString).toBe("function");
   });
 });
@@ -264,6 +306,16 @@ describe("applyUpgradesToCharacter", () => {
   it("ignores weapon-scope upgrades", () => {
     const out = applyUpgradesToCharacter(makeCharacter(), [{ def: cooldownUpgrade, level: 3 }]);
     expect(out.baseHp).toBe(100);
+    expect(out.baseSpeed).toBe(180);
+  });
+
+  it("scope.ids restricts to listed character ids only", () => {
+    const restricted: UpgradeDef = {
+      ...moveSpeedUpgrade,
+      id: "john_only",
+      scope: { kind: "character", ids: ["john"] },
+    };
+    const out = applyUpgradesToCharacter(makeCharacter(), [{ def: restricted, level: 2 }]);
     expect(out.baseSpeed).toBe(180);
   });
 });

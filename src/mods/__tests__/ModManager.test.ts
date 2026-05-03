@@ -27,7 +27,7 @@ class InMemoryStorage implements Storage {
 
 function buildBundle(id: string, damage = 50, priority = 50): unknown {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     manifest: { id, name: `Mod ${id}`, version: "0.1.0", priority },
     defs: [
       {

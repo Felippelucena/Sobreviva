@@ -1,4 +1,5 @@
 import type { LoadedPack } from "../content/PackLoader";
+import { SCHEMA_VERSION } from "../content/schema";
 import type { Renderer } from "../engine/Renderer";
 import { Rng } from "../engine/Rng";
 import type { World } from "../engine/World";
@@ -49,7 +50,7 @@ export class JsRuntime {
       if (mod.disabled || mod.dynamicDefs.length === 0) continue;
       out.push({
         manifest: {
-          schemaVersion: 1,
+          schemaVersion: SCHEMA_VERSION,
           id: `${mod.packId}.js`,
           name: `${mod.packName} (JS)`,
           version: mod.version,

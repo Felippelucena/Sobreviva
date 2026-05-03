@@ -1,6 +1,12 @@
 import type { CharacterDef } from "../../content/schema/character";
-import type { UpgradeDef } from "../../content/schema/upgrade";
-import type { WeaponDef } from "../../content/schema/weapon";
+import type {
+  AttrImprovement,
+  Improvement,
+  PushShotImprovement,
+  ShotSelect,
+  UpgradeDef,
+} from "../../content/schema/upgrade";
+import type { WeaponDef, WeaponShot } from "../../content/schema/weapon";
 
 export interface AppliedUpgrade {
   def: UpgradeDef;
@@ -13,9 +19,9 @@ export function applyUpgradesToWeapon(
 ): WeaponDef {
   const out = structuredClone(base) as WeaponDef;
   for (const a of applied) {
-    if (a.def.scope !== "weapon") continue;
-    if (a.level < 1 || a.level > a.def.maxLevel) continue;
-    applyOne(out as unknown as object, a.def, a.level);
+    if (a.def.scope.kind !== "weapon") continue;
+    if (a.def.scope.ids && !a.def.scope.ids.includes(base.id)) continue;
+    applyLevel(out as unknown as object, a.def, a.level);
   }
   return out;
 }
@@ -26,45 +32,42 @@ export function applyUpgradesToCharacter(
 ): CharacterDef {
   const out = structuredClone(base) as CharacterDef;
   for (const a of applied) {
-    if (a.def.scope !== "character") continue;
-    if (a.level < 1 || a.level > a.def.maxLevel) continue;
-    applyOne(out as unknown as object, a.def, a.level);
+    if (a.def.scope.kind !== "character") continue;
+    if (a.def.scope.ids && !a.def.scope.ids.includes(base.id)) continue;
+    applyLevel(out as unknown as object, a.def, a.level);
   }
   return out;
 }
 
-function applyOne(target: object, def: UpgradeDef, level: number): void {
-  const op = def.target.op;
-  const segs = parsePath(def.target.path);
-  if (segs === null) return;
+function applyLevel(target: object, def: UpgradeDef, level: number): void {
+  if (level < 1 || level > def.levels.length) return;
+  const lvl = def.levels[level - 1];
+  if (!lvl) return;
+  for (const imp of lvl.improvements) {
+    applyImprovement(target, imp);
+  }
+}
 
-  if (op === "pushShot") {
-    if (segs.length !== 1 || segs[0]!.kind !== "field" || segs[0]!.name !== "shots") return;
-    const obj = target as Record<string, unknown>;
-    if (!Object.hasOwn(obj, "shots")) return;
-    const arr = obj["shots"];
-    if (!Array.isArray(arr)) return;
-    for (let i = 0; i < level; i++) {
-      const v = def.values[i];
-      if (v === undefined) continue;
-      arr.push(structuredClone(v));
-    }
+function applyImprovement(target: object, imp: Improvement): void {
+  if (imp.type === "pushShot") {
+    applyPushShot(target, imp);
     return;
   }
+  applyAttr(target, imp);
+}
 
-  const value = def.values[level - 1];
-  if (typeof value !== "number" || !Number.isFinite(value)) return;
-  applyAtPath(target, segs, (current) => {
-    if (typeof current !== "number" || !Number.isFinite(current)) return current;
-    switch (op) {
-      case "mul":
-        return current * value;
-      case "add":
-        return current + value;
-      case "set":
-        return value;
-    }
-  });
+function applyPushShot(target: object, imp: PushShotImprovement): void {
+  const obj = target as Record<string, unknown>;
+  if (!Object.hasOwn(obj, "shots")) return;
+  const arr = obj["shots"];
+  if (!Array.isArray(arr)) return;
+  arr.push(structuredClone(imp.shot));
+}
+
+function applyAttr(target: object, imp: AttrImprovement): void {
+  const segs = parsePath(imp.path);
+  if (segs === null) return;
+  applyAtPath(target, segs, imp);
 }
 
 type PathSeg =
@@ -84,30 +87,57 @@ function parsePath(path: string): PathSeg[] | null {
   return segs;
 }
 
-function applyAtPath(
-  target: unknown,
-  segs: readonly PathSeg[],
-  fn: (cur: unknown) => unknown,
-): void {
+function applyAtPath(target: unknown, segs: readonly PathSeg[], imp: AttrImprovement): void {
   if (segs.length === 0 || target === null || typeof target !== "object") return;
   const seg = segs[0]!;
   const rest = segs.slice(1);
   const obj = target as Record<string, unknown>;
+
   if (seg.kind === "fieldArray") {
     if (!Object.hasOwn(obj, seg.name)) return;
     const arr = obj[seg.name];
     if (!Array.isArray(arr)) return;
+    const isShots = seg.name === "shots";
     if (rest.length === 0) {
-      for (let i = 0; i < arr.length; i++) arr[i] = fn(arr[i]);
+      for (let i = 0; i < arr.length; i++) {
+        if (isShots && !shotMatches(arr[i], i, imp.shotSelect)) continue;
+        arr[i] = applyOp(arr[i], imp);
+      }
       return;
     }
-    for (const item of arr) applyAtPath(item, rest, fn);
+    for (let i = 0; i < arr.length; i++) {
+      if (isShots && !shotMatches(arr[i], i, imp.shotSelect)) continue;
+      applyAtPath(arr[i], rest, imp);
+    }
     return;
   }
+
   if (rest.length === 0) {
-    if (Object.hasOwn(obj, seg.name)) obj[seg.name] = fn(obj[seg.name]);
+    if (Object.hasOwn(obj, seg.name)) obj[seg.name] = applyOp(obj[seg.name], imp);
     return;
   }
   if (!Object.hasOwn(obj, seg.name)) return;
-  applyAtPath(obj[seg.name], rest, fn);
+  applyAtPath(obj[seg.name], rest, imp);
+}
+
+function applyOp(current: unknown, imp: AttrImprovement): unknown {
+  if (typeof current !== "number" || !Number.isFinite(current)) return current;
+  switch (imp.op) {
+    case "mul":
+      return current * imp.value;
+    case "add":
+      return current + imp.value;
+    case "set":
+      return imp.value;
+  }
+}
+
+function shotMatches(shot: unknown, index: number, sel: ShotSelect | undefined): boolean {
+  if (!sel || sel.select === "all") return true;
+  if (sel.select === "index") return sel.index === index;
+  if (sel.select === "type") {
+    const s = shot as Partial<WeaponShot> | null;
+    return !!s && typeof s === "object" && s.type === sel.shotType;
+  }
+  return true;
 }

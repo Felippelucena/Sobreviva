@@ -264,7 +264,7 @@ export class Game {
     const levels = this.world.get(targetEntityId, UpgradeLevels);
     if (!levels) return;
     levels.byUpgradeId.set(upgrade.id, nextLevel);
-    if (upgrade.scope === "weapon") {
+    if (upgrade.scope.kind === "weapon") {
       this.recomputeWeaponState(targetEntityId);
     } else {
       this.recomputeCharacterStats(playerId);

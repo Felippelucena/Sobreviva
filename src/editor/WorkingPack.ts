@@ -11,6 +11,7 @@ import type {
   WaveDef,
   WeaponDef,
 } from "../content/schema";
+import { SCHEMA_VERSION } from "../content/schema";
 import { EDITOR_DRAFT_KEY } from "../persistence/Keys";
 import { SaveStore } from "../persistence/SaveStore";
 
@@ -25,7 +26,7 @@ const EMPTY_MANIFEST: BundledManifest = {
 };
 
 export function emptyBundle(): BundledPack {
-  return { schemaVersion: 1, manifest: { ...EMPTY_MANIFEST }, defs: [], scripts: [] };
+  return { schemaVersion: SCHEMA_VERSION, manifest: { ...EMPTY_MANIFEST }, defs: [], scripts: [] };
 }
 
 export class WorkingPack {
@@ -238,9 +239,15 @@ export function blankUpgrade(id: string): UpgradeDef {
     id,
     name: id,
     desc: "",
-    scope: "weapon",
-    maxLevel: 3,
-    target: { path: "cooldownMs", op: "mul" },
-    values: [0.95, 0.9, 0.85],
+    scope: { kind: "weapon" },
+    levels: [
+      {
+        name: "Nível 1",
+        description: "",
+        improvements: [
+          { type: "attr", path: "cooldownMs", op: "mul", value: 0.95 },
+        ],
+      },
+    ],
   };
 }
