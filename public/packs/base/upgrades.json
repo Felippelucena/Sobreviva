@@ -1,75 +1,130 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "defs": [
     {
       "kind": "upgrade",
       "id": "damage",
       "name": "Mais dano",
       "desc": "Aumenta o dano de todos os disparos da arma.",
-      "scope": "weapon",
-      "maxLevel": 5,
-      "target": { "path": "shots[].damage", "op": "mul" },
-      "values": [1.20, 1.44, 1.73, 2.07, 2.49]
+      "scope": { "kind": "weapon" },
+      "levels": [
+        { "name": "Nível 1", "description": "+20% de dano", "improvements": [{ "type": "attr", "path": "shots[].damage", "op": "mul", "value": 1.20, "shotSelect": { "select": "all" } }] },
+        { "name": "Nível 2", "description": "+44% de dano", "improvements": [{ "type": "attr", "path": "shots[].damage", "op": "mul", "value": 1.44, "shotSelect": { "select": "all" } }] },
+        { "name": "Nível 3", "description": "+73% de dano", "improvements": [{ "type": "attr", "path": "shots[].damage", "op": "mul", "value": 1.73, "shotSelect": { "select": "all" } }] },
+        { "name": "Nível 4", "description": "+107% de dano", "improvements": [{ "type": "attr", "path": "shots[].damage", "op": "mul", "value": 2.07, "shotSelect": { "select": "all" } }] },
+        { "name": "Nível 5", "description": "+149% de dano", "improvements": [{ "type": "attr", "path": "shots[].damage", "op": "mul", "value": 2.49, "shotSelect": { "select": "all" } }] }
+      ]
     },
     {
       "kind": "upgrade",
       "id": "cooldown",
       "name": "Mais rápido",
       "desc": "Reduz o tempo de recarga da arma.",
-      "scope": "weapon",
-      "maxLevel": 6,
-      "target": { "path": "cooldownMs", "op": "mul" },
-      "values": [0.95, 0.90, 0.87, 0.85, 0.75, 0.65]
+      "scope": { "kind": "weapon" },
+      "levels": [
+        { "name": "Nível 1", "description": "-5% de recarga", "improvements": [{ "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.95 }] },
+        { "name": "Nível 2", "description": "-10% de recarga", "improvements": [{ "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.90 }] },
+        { "name": "Nível 3", "description": "-13% de recarga", "improvements": [{ "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.87 }] },
+        { "name": "Nível 4", "description": "-15% de recarga", "improvements": [{ "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.85 }] },
+        { "name": "Nível 5", "description": "-25% de recarga", "improvements": [{ "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.75 }] },
+        { "name": "Nível 6", "description": "-35% de recarga", "improvements": [{ "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.65 }] }
+      ]
     },
     {
       "kind": "upgrade",
       "id": "projectile_speed",
       "name": "Mais potência",
       "desc": "Aumenta a velocidade dos projéteis.",
-      "scope": "weapon",
-      "maxLevel": 5,
-      "target": { "path": "shots[].projectile.speed", "op": "mul" },
-      "values": [1.15, 1.30, 1.50, 1.70, 1.95]
+      "scope": { "kind": "weapon" },
+      "levels": [
+        { "name": "Nível 1", "description": "+15% de velocidade", "improvements": [{ "type": "attr", "path": "shots[].projectile.speed", "op": "mul", "value": 1.15, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 2", "description": "+30% de velocidade", "improvements": [{ "type": "attr", "path": "shots[].projectile.speed", "op": "mul", "value": 1.30, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 3", "description": "+50% de velocidade", "improvements": [{ "type": "attr", "path": "shots[].projectile.speed", "op": "mul", "value": 1.50, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 4", "description": "+70% de velocidade", "improvements": [{ "type": "attr", "path": "shots[].projectile.speed", "op": "mul", "value": 1.70, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 5", "description": "+95% de velocidade", "improvements": [{ "type": "attr", "path": "shots[].projectile.speed", "op": "mul", "value": 1.95, "shotSelect": { "select": "type", "shotType": "projectile" } }] }
+      ]
     },
     {
       "kind": "upgrade",
       "id": "pierce",
       "name": "Perfuração",
       "desc": "Projéteis atravessam mais inimigos antes de sumir.",
-      "scope": "weapon",
-      "maxLevel": 5,
-      "target": { "path": "shots[].projectile.pierce", "op": "add" },
-      "values": [1, 2, 3, 4, 5]
+      "scope": { "kind": "weapon" },
+      "levels": [
+        { "name": "Nível 1", "description": "+1 perfuração", "improvements": [{ "type": "attr", "path": "shots[].projectile.pierce", "op": "add", "value": 1, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 2", "description": "+2 perfurações", "improvements": [{ "type": "attr", "path": "shots[].projectile.pierce", "op": "add", "value": 2, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 3", "description": "+3 perfurações", "improvements": [{ "type": "attr", "path": "shots[].projectile.pierce", "op": "add", "value": 3, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 4", "description": "+4 perfurações", "improvements": [{ "type": "attr", "path": "shots[].projectile.pierce", "op": "add", "value": 4, "shotSelect": { "select": "type", "shotType": "projectile" } }] },
+        { "name": "Nível 5", "description": "+5 perfurações", "improvements": [{ "type": "attr", "path": "shots[].projectile.pierce", "op": "add", "value": 5, "shotSelect": { "select": "type", "shotType": "projectile" } }] }
+      ]
+    },
+    {
+      "kind": "upgrade",
+      "id": "shotgun_focus",
+      "name": "Foco do Bacamarte",
+      "desc": "Aprimora simultaneamente dano, cadência e perfuração — exclusivo do Bacamarte.",
+      "scope": { "kind": "weapon", "ids": ["shotgun"] },
+      "levels": [
+        {
+          "name": "Tiro certeiro",
+          "description": "+30% dano em todos os disparos e -10% recarga.",
+          "improvements": [
+            { "type": "attr", "path": "shots[].damage", "op": "mul", "value": 1.30, "shotSelect": { "select": "all" } },
+            { "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.90 }
+          ]
+        },
+        {
+          "name": "Chumbo grosso",
+          "description": "+60% dano, -20% recarga e +1 perfuração nos projéteis.",
+          "improvements": [
+            { "type": "attr", "path": "shots[].damage", "op": "mul", "value": 1.60, "shotSelect": { "select": "all" } },
+            { "type": "attr", "path": "cooldownMs", "op": "mul", "value": 0.80 },
+            { "type": "attr", "path": "shots[].projectile.pierce", "op": "add", "value": 1, "shotSelect": { "select": "type", "shotType": "projectile" } }
+          ]
+        }
+      ]
     },
     {
       "kind": "upgrade",
       "id": "move_speed",
       "name": "Mais veloz",
       "desc": "Aumenta a velocidade de movimento do personagem.",
-      "scope": "character",
-      "maxLevel": 5,
-      "target": { "path": "baseSpeed", "op": "mul" },
-      "values": [1.12, 1.25, 1.40, 1.55, 1.75]
+      "scope": { "kind": "character" },
+      "levels": [
+        { "name": "Nível 1", "description": "+12% de velocidade", "improvements": [{ "type": "attr", "path": "baseSpeed", "op": "mul", "value": 1.12 }] },
+        { "name": "Nível 2", "description": "+25% de velocidade", "improvements": [{ "type": "attr", "path": "baseSpeed", "op": "mul", "value": 1.25 }] },
+        { "name": "Nível 3", "description": "+40% de velocidade", "improvements": [{ "type": "attr", "path": "baseSpeed", "op": "mul", "value": 1.40 }] },
+        { "name": "Nível 4", "description": "+55% de velocidade", "improvements": [{ "type": "attr", "path": "baseSpeed", "op": "mul", "value": 1.55 }] },
+        { "name": "Nível 5", "description": "+75% de velocidade", "improvements": [{ "type": "attr", "path": "baseSpeed", "op": "mul", "value": 1.75 }] }
+      ]
     },
     {
       "kind": "upgrade",
       "id": "max_hp",
       "name": "Mais vida",
       "desc": "Aumenta o HP máximo do personagem.",
-      "scope": "character",
-      "maxLevel": 5,
-      "target": { "path": "baseHp", "op": "add" },
-      "values": [25, 50, 80, 120, 175]
+      "scope": { "kind": "character" },
+      "levels": [
+        { "name": "Nível 1", "description": "+25 HP", "improvements": [{ "type": "attr", "path": "baseHp", "op": "add", "value": 25 }] },
+        { "name": "Nível 2", "description": "+50 HP", "improvements": [{ "type": "attr", "path": "baseHp", "op": "add", "value": 50 }] },
+        { "name": "Nível 3", "description": "+80 HP", "improvements": [{ "type": "attr", "path": "baseHp", "op": "add", "value": 80 }] },
+        { "name": "Nível 4", "description": "+120 HP", "improvements": [{ "type": "attr", "path": "baseHp", "op": "add", "value": 120 }] },
+        { "name": "Nível 5", "description": "+175 HP", "improvements": [{ "type": "attr", "path": "baseHp", "op": "add", "value": 175 }] }
+      ]
     },
     {
       "kind": "upgrade",
       "id": "pickup_radius",
       "name": "Ímã",
       "desc": "Aumenta o raio de coleta de itens.",
-      "scope": "character",
-      "maxLevel": 5,
-      "target": { "path": "pickupRadius", "op": "mul" },
-      "values": [1.25, 1.5, 1.8, 2.1, 2.5]
+      "scope": { "kind": "character" },
+      "levels": [
+        { "name": "Nível 1", "description": "+25% de raio", "improvements": [{ "type": "attr", "path": "pickupRadius", "op": "mul", "value": 1.25 }] },
+        { "name": "Nível 2", "description": "+50% de raio", "improvements": [{ "type": "attr", "path": "pickupRadius", "op": "mul", "value": 1.5 }] },
+        { "name": "Nível 3", "description": "+80% de raio", "improvements": [{ "type": "attr", "path": "pickupRadius", "op": "mul", "value": 1.8 }] },
+        { "name": "Nível 4", "description": "+110% de raio", "improvements": [{ "type": "attr", "path": "pickupRadius", "op": "mul", "value": 2.1 }] },
+        { "name": "Nível 5", "description": "+150% de raio", "improvements": [{ "type": "attr", "path": "pickupRadius", "op": "mul", "value": 2.5 }] }
+      ]
     }
   ]
 }

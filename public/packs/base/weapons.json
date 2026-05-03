@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "defs": [
     {
       "kind": "weapon",
@@ -60,7 +60,7 @@
       "id": "shotgun",
       "name": "Bacamarte",
       "cooldownMs": 950,
-      "upgradeIds": ["damage", "cooldown", "projectile_speed", "pierce"],
+      "upgradeIds": ["damage", "cooldown", "projectile_speed", "pierce", "shotgun_focus"],
       "shots": [
         {
           "type": "projectile",

@@ -19,6 +19,8 @@ export type LevelUpCard =
       targetEntityId: EntityId;
       // Level the player will be AT after picking this card.
       nextLevel: number;
+      // Display name of the weapon or character this upgrade applies to.
+      targetName: string;
     }
   | { kind: "newWeapon"; weapon: WeaponDef };
 
@@ -62,14 +64,16 @@ function collectCandidates(opts: BuildPoolOpts): LevelUpCard[] {
       const wLevels = world.get(weaponEntityId, UpgradeLevels);
       for (const upgradeId of def.upgradeIds) {
         const upgrade = registry.find("upgrade", upgradeId);
-        if (!upgrade || upgrade.scope !== "weapon") continue;
+        if (!upgrade || upgrade.scope.kind !== "weapon") continue;
+        if (upgrade.scope.ids && !upgrade.scope.ids.includes(def.id)) continue;
         const cur = wLevels?.byUpgradeId.get(upgradeId) ?? 0;
-        if (cur >= upgrade.maxLevel) continue;
+        if (cur >= upgrade.levels.length) continue;
         out.push({
           kind: "upgrade",
           upgrade,
           targetEntityId: weaponEntityId,
           nextLevel: cur + 1,
+          targetName: def.name,
         });
       }
     }
@@ -77,14 +81,16 @@ function collectCandidates(opts: BuildPoolOpts): LevelUpCard[] {
 
   for (const upgradeId of character.upgradeIds) {
     const upgrade = registry.find("upgrade", upgradeId);
-    if (!upgrade || upgrade.scope !== "character") continue;
+    if (!upgrade || upgrade.scope.kind !== "character") continue;
+    if (upgrade.scope.ids && !upgrade.scope.ids.includes(character.id)) continue;
     const cur = playerLevels?.byUpgradeId.get(upgradeId) ?? 0;
-    if (cur >= upgrade.maxLevel) continue;
+    if (cur >= upgrade.levels.length) continue;
     out.push({
       kind: "upgrade",
       upgrade,
       targetEntityId: playerId,
       nextLevel: cur + 1,
+      targetName: character.name,
     });
   }
 

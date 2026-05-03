@@ -1,10 +1,10 @@
 import type { LoadedPack } from "./PackLoader";
-import { BundledPack, validateWaveEntries } from "./schema";
+import { BundledPack, SCHEMA_VERSION, validateWaveEntries } from "./schema";
 
 export function bundleFromLoadedPack(pack: LoadedPack): BundledPack {
   const { manifest, defs } = pack;
   return {
-    schemaVersion: 1,
+    schemaVersion: SCHEMA_VERSION,
     manifest: {
       id: manifest.id,
       name: manifest.name,
@@ -35,7 +35,7 @@ export function parseBundle(raw: unknown): BundledPack {
 export function bundleToLoadedPack(bundle: BundledPack): LoadedPack {
   return {
     manifest: {
-      schemaVersion: 1,
+      schemaVersion: SCHEMA_VERSION,
       id: bundle.manifest.id,
       name: bundle.manifest.name,
       version: bundle.manifest.version,

@@ -215,7 +215,7 @@ describe("PackManifest", () => {
   it("requires at least one file", () => {
     expect(() =>
       PackManifest.parse({
-        schemaVersion: 1,
+        schemaVersion: 2,
         id: "p",
         name: "P",
         version: "0.1.0",
@@ -226,7 +226,7 @@ describe("PackManifest", () => {
 
   it("defaults priority and dependsOn", () => {
     const m = PackManifest.parse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       id: "p",
       name: "P",
       version: "0.1.0",
@@ -241,7 +241,7 @@ describe("PackManifest", () => {
 describe("PackFile discriminated union", () => {
   it("parses mixed kinds", () => {
     const file = PackFile.parse({
-      schemaVersion: 1,
+      schemaVersion: 2,
       defs: [
         {
           kind: "weapon",
@@ -266,7 +266,7 @@ describe("PackFile discriminated union", () => {
   it("rejects unknown kind", () => {
     expect(() =>
       PackFile.parse({
-        schemaVersion: 1,
+        schemaVersion: 2,
         defs: [{ kind: "wat", id: "x" }],
       }),
     ).toThrow();

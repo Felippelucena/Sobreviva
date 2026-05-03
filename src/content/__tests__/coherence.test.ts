@@ -104,14 +104,22 @@ describe("coherence: AnyDef ↔ DefByKind ↔ Editor ↔ packs", () => {
   it("weapon.upgradeIds and character.upgradeIds reference upgrades with matching scope", () => {
     const manifest = PackManifest.parse(readJson(join(PACKS_ROOT, "base", "manifest.json")));
     const upgradesById = new Map<string, ReturnType<typeof UpgradeDef.parse>>();
+    const weaponIds = new Set<string>();
+    const characterIds = new Set<string>();
     const weapons: { id: string; upgradeIds: readonly string[] }[] = [];
     const characters: { id: string; upgradeIds: readonly string[] }[] = [];
     for (const relative of manifest.files) {
       const parsed = PackFile.parse(readJson(join(PACKS_ROOT, "base", relative)));
       for (const def of parsed.defs) {
         if (def.kind === "upgrade") upgradesById.set(def.id, def);
-        if (def.kind === "weapon") weapons.push({ id: def.id, upgradeIds: def.upgradeIds });
-        if (def.kind === "character") characters.push({ id: def.id, upgradeIds: def.upgradeIds });
+        if (def.kind === "weapon") {
+          weaponIds.add(def.id);
+          weapons.push({ id: def.id, upgradeIds: def.upgradeIds });
+        }
+        if (def.kind === "character") {
+          characterIds.add(def.id);
+          characters.push({ id: def.id, upgradeIds: def.upgradeIds });
+        }
       }
     }
     for (const w of weapons) {
@@ -119,9 +127,15 @@ describe("coherence: AnyDef ↔ DefByKind ↔ Editor ↔ packs", () => {
         const u = upgradesById.get(uid);
         expect(u, `weapon "${w.id}" references upgrade "${uid}" that does not exist`).toBeDefined();
         expect(
-          u!.scope,
-          `weapon "${w.id}" references upgrade "${uid}" with scope "${u!.scope}" (expected "weapon")`,
+          u!.scope.kind,
+          `weapon "${w.id}" references upgrade "${uid}" with scope.kind "${u!.scope.kind}" (expected "weapon")`,
         ).toBe("weapon");
+        if (u!.scope.ids) {
+          expect(
+            u!.scope.ids.includes(w.id),
+            `weapon "${w.id}" references upgrade "${uid}" whose scope.ids ${JSON.stringify(u!.scope.ids)} does not include this weapon`,
+          ).toBe(true);
+        }
       }
     }
     for (const c of characters) {
@@ -129,14 +143,32 @@ describe("coherence: AnyDef ↔ DefByKind ↔ Editor ↔ packs", () => {
         const u = upgradesById.get(uid);
         expect(u, `character "${c.id}" references upgrade "${uid}" that does not exist`).toBeDefined();
         expect(
-          u!.scope,
-          `character "${c.id}" references upgrade "${uid}" with scope "${u!.scope}" (expected "character")`,
+          u!.scope.kind,
+          `character "${c.id}" references upgrade "${uid}" with scope.kind "${u!.scope.kind}" (expected "character")`,
         ).toBe("character");
+        if (u!.scope.ids) {
+          expect(
+            u!.scope.ids.includes(c.id),
+            `character "${c.id}" references upgrade "${uid}" whose scope.ids ${JSON.stringify(u!.scope.ids)} does not include this character`,
+          ).toBe(true);
+        }
+      }
+    }
+    // scope.ids on every upgrade must reference an existing weapon/character id in the base pack.
+    for (const u of upgradesById.values()) {
+      if (!u.scope.ids) continue;
+      const pool = u.scope.kind === "weapon" ? weaponIds : characterIds;
+      for (const id of u.scope.ids) {
+        expect(
+          pool.has(id),
+          `upgrade "${u.id}" scope.ids includes "${id}" which is not a known ${u.scope.kind} in the base pack`,
+        ).toBe(true);
       }
     }
   });
 
-  it("every upgrade has values.length === maxLevel and passes validateUpgradeDef", () => {
+  it("every upgrade passes validateUpgradeDef and uses valid shotSelect.shotType", () => {
+    const validShotTypes = new Set(["projectile", "area"]);
     const manifest = PackManifest.parse(readJson(join(PACKS_ROOT, "base", "manifest.json")));
     for (const relative of manifest.files) {
       const parsed = PackFile.parse(readJson(join(PACKS_ROOT, "base", relative)));
@@ -144,6 +176,16 @@ describe("coherence: AnyDef ↔ DefByKind ↔ Editor ↔ packs", () => {
         if (def.kind !== "upgrade") continue;
         const err = validateUpgradeDef(def);
         expect(err, `upgrade "${def.id}" failed: ${err ?? ""}`).toBeNull();
+        for (const lvl of def.levels) {
+          for (const imp of lvl.improvements) {
+            if (imp.type !== "attr") continue;
+            if (!imp.shotSelect || imp.shotSelect.select !== "type") continue;
+            expect(
+              validShotTypes.has(imp.shotSelect.shotType),
+              `upgrade "${def.id}": shotSelect.shotType "${imp.shotSelect.shotType}" is not a valid WeaponShot discriminator`,
+            ).toBe(true);
+          }
+        }
       }
     }
   });

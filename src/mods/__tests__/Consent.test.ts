@@ -26,7 +26,7 @@ class InMemoryStorage implements Storage {
 
 function buildJsMod(id: string, version = "1.0.0"): unknown {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     manifest: { id, name: `JS ${id}`, version, priority: 100 },
     defs: [],
     scripts: [{ name: "main.js", code: "export default function register(api){ api.log('x'); }" }],
