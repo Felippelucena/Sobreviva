@@ -334,7 +334,7 @@ function discriminatedUnionField(
   return wrap;
 }
 
-function makeDefault(schema: z.ZodTypeAny): unknown {
+export function makeDefault(schema: z.ZodTypeAny): unknown {
   const inner = unwrap(schema);
   const tn = inner._def.typeName as string;
   // Optional/nullable wrappers: caller can leave the value as undefined,
@@ -380,6 +380,10 @@ function makeDefault(schema: z.ZodTypeAny): unknown {
       return "";
     case "ZodBoolean":
       return false;
+    case "ZodEnum": {
+      const values = (inner as z.ZodEnum<[string, ...string[]]>)._def.values as string[];
+      return values[0];
+    }
     case "ZodArray":
       return [];
     case "ZodOptional":
