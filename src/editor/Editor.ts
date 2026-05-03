@@ -39,6 +39,8 @@ const TABS: readonly { kind: Kind; label: string }[] = [
   { kind: "upgrade", label: "Melhorias" },
 ];
 
+const COMPACT_KINDS = new Set<Kind>(["upgrade", "weapon", "enemy", "character"]);
+
 export interface EditorCallbacks {
   onBackToGame: () => void;
 }
@@ -313,6 +315,7 @@ export class Editor {
         return (cur ?? def) as unknown as Record<string, unknown>;
       },
       omit: ["kind", "id"],
+      compact: COMPACT_KINDS.has(kind),
       onChange: (next) => {
         const id = this.currentId;
         const cur = (id ? this.working.get(formKind, id) : undefined) ?? def;

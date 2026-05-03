@@ -1139,6 +1139,28 @@ body {
   border-radius: 6px;
 }
 
+.pg__row--group-compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px 12px;
+  align-items: end;
+}
+
+.pg__row--group-compact .pg__row--compact-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pg__row--group-compact .pg__row--compact-cell .pg__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+
 .pg__label {
   font-size: 12px;
   opacity: 0.8;

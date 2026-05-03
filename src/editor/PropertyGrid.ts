@@ -10,6 +10,13 @@ export interface PropertyGridOptions<T extends Record<string, unknown>> {
   /** Fields to hide (rendered but as read-only summary). */
   omit?: readonly string[];
   onChange: (next: T) => void;
+  /**
+   * When true, runs of adjacent leaf fields (number/enum/short string/boolean)
+   * are packed into a CSS-grid row instead of one row each. Nested objects,
+   * arrays, discriminated unions, color pickers and textareas always break
+   * the run and stack vertically.
+   */
+  compact?: boolean;
 }
 
 export function renderPropertyGrid<T extends Record<string, unknown>>(
@@ -18,22 +25,68 @@ export function renderPropertyGrid<T extends Record<string, unknown>>(
   const root = document.createElement("div");
   root.className = "pg";
   const shape = opts.schema.shape;
-  for (const [fieldKey, fieldSchema] of Object.entries(shape)) {
-    if (opts.omit?.includes(fieldKey)) continue;
-    const row = renderField(
+  const entries = Object.entries(shape).filter(([k]) => !opts.omit?.includes(k));
+  const compact = opts.compact === true;
+  appendFieldRuns(root, entries, compact, (fieldKey, fieldSchema) =>
+    renderField(
       fieldKey,
       fieldKey,
-      fieldSchema as z.ZodTypeAny,
+      fieldSchema,
       () => (opts.getValue() as Record<string, unknown>)[fieldKey],
       (newValue) => {
         const cur = opts.getValue() as Record<string, unknown>;
         const next = { ...cur, [fieldKey]: newValue } as T;
         opts.onChange(next);
       },
-    );
-    root.appendChild(row);
-  }
+      compact,
+    ),
+  );
   return root;
+}
+
+function appendFieldRuns(
+  parent: HTMLElement,
+  entries: readonly (readonly [string, unknown])[],
+  compact: boolean,
+  build: (key: string, schema: z.ZodTypeAny) => HTMLElement,
+): void {
+  if (!compact) {
+    for (const [key, schema] of entries) parent.appendChild(build(key, schema as z.ZodTypeAny));
+    return;
+  }
+  let bucket: HTMLElement[] = [];
+  const flush = (): void => {
+    if (bucket.length === 0) return;
+    if (bucket.length === 1) {
+      parent.appendChild(bucket[0]!);
+    } else {
+      const group = document.createElement("div");
+      group.className = "pg__row--group-compact";
+      for (const row of bucket) {
+        row.classList.add("pg__row--compact-cell");
+        group.appendChild(row);
+      }
+      parent.appendChild(group);
+    }
+    bucket = [];
+  };
+  for (const [key, schema] of entries) {
+    const row = build(key, schema as z.ZodTypeAny);
+    if (canPack(schema as z.ZodTypeAny, key)) {
+      bucket.push(row);
+    } else {
+      flush();
+      parent.appendChild(row);
+    }
+  }
+  flush();
+}
+
+function canPack(schema: z.ZodTypeAny, key: string): boolean {
+  if (COLOR_FIELDS.has(key)) return false;
+  if (READ_ONLY_FIELDS.has(key)) return true;
+  const tn = unwrap(schema)._def.typeName as string;
+  return tn === "ZodNumber" || tn === "ZodEnum" || tn === "ZodBoolean" || tn === "ZodLiteral" || tn === "ZodString";
 }
 
 function renderField(
@@ -42,6 +95,7 @@ function renderField(
   schema: z.ZodTypeAny,
   getCurrent: () => unknown,
   onChange: (newValue: unknown) => void,
+  compact = false,
 ): HTMLElement {
   const row = document.createElement("div");
   row.className = "pg__row";
@@ -81,11 +135,12 @@ function renderField(
       const sub = document.createElement("div");
       sub.className = "pg__object";
       const subShape = (base as z.ZodObject<z.ZodRawShape>).shape;
-      for (const [subKey, subSchema] of Object.entries(subShape)) {
-        const subRow = renderField(
+      const subEntries = Object.entries(subShape);
+      appendFieldRuns(sub, subEntries, compact, (subKey, subSchema) =>
+        renderField(
           subKey,
           subKey,
-          subSchema as z.ZodTypeAny,
+          subSchema,
           () => {
             const cur = getCurrent();
             return cur && typeof cur === "object"
@@ -98,20 +153,25 @@ function renderField(
             const next = { ...base2, [subKey]: newValue };
             onChange(next);
           },
-        );
-        sub.appendChild(subRow);
-      }
+          compact,
+        ),
+      );
       labelEl.classList.add("pg__label--group");
       row.classList.add("pg__row--group");
       row.appendChild(sub);
       break;
     }
     case "ZodArray":
-      row.appendChild(arrayField(base as z.ZodArray<z.ZodTypeAny>, getCurrent, onChange));
+      row.appendChild(arrayField(base as z.ZodArray<z.ZodTypeAny>, getCurrent, onChange, compact));
       break;
     case "ZodDiscriminatedUnion":
       row.appendChild(
-        discriminatedUnionField(base as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>, getCurrent, onChange),
+        discriminatedUnionField(
+          base as z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>,
+          getCurrent,
+          onChange,
+          compact,
+        ),
       );
       break;
     default:
@@ -126,6 +186,7 @@ function arrayField(
   schema: z.ZodArray<z.ZodTypeAny>,
   getCurrent: () => unknown,
   onChange: (next: unknown) => void,
+  compact = false,
 ): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "pg__array";
@@ -174,6 +235,7 @@ function arrayField(
           arr[idx] = next;
           onChange(arr);
         },
+        compact,
       );
       const itemLabel = itemBody.querySelector(".pg__label");
       if (itemLabel) itemLabel.remove();
@@ -202,6 +264,7 @@ function discriminatedUnionField(
   schema: z.ZodDiscriminatedUnion<string, z.ZodObject<z.ZodRawShape>[]>,
   getCurrent: () => unknown,
   onChange: (next: unknown) => void,
+  compact = false,
 ): HTMLElement {
   const wrap = document.createElement("div");
   wrap.className = "pg__object";
@@ -244,12 +307,12 @@ function discriminatedUnionField(
 
     const activeOption = options[optionLabels.indexOf(currentTag)];
     if (!activeOption) return;
-    for (const [subKey, subSchema] of Object.entries(activeOption.shape)) {
-      if (subKey === discriminator) continue;
-      const subRow = renderField(
+    const subEntries = Object.entries(activeOption.shape).filter(([k]) => k !== discriminator);
+    appendFieldRuns(wrap, subEntries, compact, (subKey, subSchema) =>
+      renderField(
         subKey,
         subKey,
-        subSchema as z.ZodTypeAny,
+        subSchema,
         () => {
           const cur = getCurrent();
           return cur && typeof cur === "object"
@@ -262,9 +325,9 @@ function discriminatedUnionField(
           const next = { ...base2, [subKey]: newValue };
           onChange(next);
         },
-      );
-      wrap.appendChild(subRow);
-    }
+        compact,
+      ),
+    );
   };
 
   rebuild();
